@@ -1,4 +1,5 @@
 import WindowManager from "./WindowManager.js";
+import WindowRepulsion from "./WindowRepulsion.js";
 
 const PLAYER_KEY = "window-maze-player";
 const PLAYER_RADIUS = 14;
@@ -7,9 +8,11 @@ const PLAYER_SPEED = 260;
 let canvas;
 let context;
 let windowManager;
+let windowRepulsion;
 let player;
 let lastFrameTime = performance.now();
 let initialized = false;
+let lockedWindowSize;
 const keys = new Set();
 
 if (new URLSearchParams(window.location.search).has("clear")) {
@@ -34,6 +37,12 @@ function init() {
 
 	windowManager = new WindowManager();
 	windowManager.init({ role: "maze-fragment" });
+	windowRepulsion = new WindowRepulsion(windowManager, 8);
+
+	lockedWindowSize = {
+		width: window.outerWidth,
+		height: window.outerHeight
+	};
 
 	resize();
 	loadOrCreatePlayer();
@@ -66,7 +75,7 @@ function savePlayer() {
 }
 
 function addEventListeners() {
-	window.addEventListener("resize", resize);
+	window.addEventListener("resize", lockWindowSize);
 
 	window.addEventListener("keydown", (event) => {
 		const key = event.key.toLowerCase();
@@ -98,6 +107,12 @@ function addEventListeners() {
 			}
 		}
 	});
+}
+
+function lockWindowSize() {
+	// resizeTo generally works only for windows created with window.open().
+	window.resizeTo(lockedWindowSize.width, lockedWindowSize.height);
+	resize();
 }
 
 function resize() {
@@ -156,6 +171,7 @@ function render(currentTime) {
 	lastFrameTime = currentTime;
 
 	windowManager.update();
+	windowRepulsion.update(currentTime);
 	updatePlayer(deltaTime);
 
 	context.fillStyle = "#070a12";

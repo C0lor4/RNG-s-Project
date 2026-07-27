@@ -83,7 +83,9 @@ class WindowManager
 
 	getWinShape ()
 	{
-		let shape = {x: window.screenLeft, y: window.screenTop, w: window.innerWidth, h: window.innerHeight};
+		// screenLeft/screenTop describe the outer browser window, so collision
+		// dimensions must also use the outer size (including the browser frame).
+		let shape = {x: window.screenLeft, y: window.screenTop, w: window.outerWidth, h: window.outerHeight};
 		return shape;
 	}
 
