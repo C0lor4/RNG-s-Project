@@ -5,10 +5,10 @@ import WindowRepulsion from "./WindowRepulsion.js";
  * Setup the windows
 */
 
-const ALLOWED_OVERLAP = 10;
+const OVERLAP = 16;
 let createdWindows = [];
 let player = { x: 0, y: 0 };
-const windowRepulsion = new WindowRepulsion(ALLOWED_OVERLAP);
+const windowRepulsion = new WindowRepulsion(OVERLAP);
 
 export function createWindows(height, width) {
 	const index = createdWindows.length;
@@ -52,7 +52,7 @@ function findRandomPosition(height, width) {
 	const maximumX = screenLeft + screen.availWidth - width;
 	const maximumY = screenTop + screen.availHeight - height;
 
-	while (true) {
+	for (let attempt = 0; attempt < 100; attempt += 1) {
 		const position = {
 			x: randomInteger(screenLeft, maximumX),
 			y: randomInteger(screenTop, maximumY),
@@ -64,14 +64,26 @@ function findRandomPosition(height, width) {
 			return position;
 		}
 	}
+
+	for (let y = screenTop; y <= maximumY; y += 10) {
+		for (let x = screenLeft; x <= maximumX; x += 10) {
+			const position = { x, y, width, height };
+
+			if (!createdWindows.some((other) => windowsOverlap(position, other))) {
+				return position;
+			}
+		}
+	}
+
+	return { x: screenLeft, y: screenTop, width, height };
 }
 
 function windowsOverlap(first, second) {
 	return (
-		first.x < second.x + second.width - ALLOWED_OVERLAP &&
-		first.x + first.width - ALLOWED_OVERLAP > second.x &&
-		first.y < second.y + second.height - ALLOWED_OVERLAP &&
-		first.y + first.height - ALLOWED_OVERLAP > second.y
+		first.x < second.x + second.width - OVERLAP &&
+		first.x + first.width - OVERLAP > second.x &&
+		first.y < second.y + second.height - OVERLAP &&
+		first.y + first.height - OVERLAP > second.y
 	);
 }
 
@@ -119,11 +131,6 @@ window.addEventListener("message", (event) => {
 		sendPlayer();
 	}
 
-	if (event.data.type === "reset") {
-		player.x = event.data.x;
-		player.y = event.data.y;
-		sendPlayer();
-	}
 });
 
 const startButton = document.querySelector("#start-button");

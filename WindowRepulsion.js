@@ -1,4 +1,4 @@
-const DEFAULT_ALLOWED_OVERLAP = 10;
+const DEFAULT_ALLOWED_OVERLAP = 16;
 const CORNER_DIFFERENCE = 16;
 const RELEASE_DELAY = 140;
 const UPDATE_INTERVAL = 20;
@@ -162,7 +162,7 @@ class WindowRepulsion {
 		const maximumX = bounds.right - pushed.width;
 		const maximumY = bounds.bottom - pushed.height;
 
-		while (true) {
+		for (let attempt = 0; attempt < 100; attempt += 1) {
 			const x = randomInteger(bounds.left, maximumX);
 			const y = randomInteger(bounds.top, maximumY);
 			const position = {
@@ -180,6 +180,27 @@ class WindowRepulsion {
 			if (!overlaps) {
 				this.moveWindow(pushed, x, y, currentTime);
 				return;
+			}
+		}
+
+		for (let y = bounds.top; y <= maximumY; y += 10) {
+			for (let x = bounds.left; x <= maximumX; x += 10) {
+				const position = {
+					x,
+					y,
+					width: pushed.width,
+					height: pushed.height
+				};
+
+				const overlaps = this.windows.some((other) => (
+					other !== pushed &&
+					windowsOverlap(position, other, this.allowedOverlap)
+				));
+
+				if (!overlaps) {
+					this.moveWindow(pushed, x, y, currentTime);
+					return;
+				}
 			}
 		}
 	}

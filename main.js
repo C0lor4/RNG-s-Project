@@ -1,83 +1,55 @@
 const PLAYER_RADIUS = 14;
 const PLAYER_SPEED = 260;
 
-let canvas;
-let context;
+const canvas = document.createElement("canvas");
+const context = canvas.getContext("2d");
+const keys = new Set();
+const windowWidth = window.outerWidth;
+const windowHeight = window.outerHeight;
+
 let player;
 let lastFrameTime = performance.now();
-let lockedWindowSize;
-const keys = new Set();
 
-window.addEventListener("load", init);
+document.body.appendChild(canvas);
+resizeCanvas();
 
-function init() {
-	canvas = document.createElement("canvas");
-	context = canvas.getContext("2d");
-	document.body.appendChild(canvas);
+window.addEventListener("resize", () => {
+	window.resizeTo(windowWidth, windowHeight);
+	resizeCanvas();
+});
 
-	lockedWindowSize = {
-		width: window.outerWidth,
-		height: window.outerHeight
-	};
+window.addEventListener("keydown", (event) => {
+	const key = event.key.toLowerCase();
 
-	resize();
-	addEventListeners();
+	if (["w", "a", "s", "d"].includes(key)) {
+		keys.add(key);
+	}
+});
 
-	window.opener.postMessage(
-		{ type: "ready" },
-		window.location.origin
-	);
+window.addEventListener("keyup", (event) => {
+	keys.delete(event.key.toLowerCase());
+});
 
-	requestAnimationFrame(render);
-}
+window.addEventListener("blur", () => {
+	keys.clear();
+});
 
-function addEventListeners() {
-	window.addEventListener("resize", lockWindowSize);
+window.addEventListener("message", (event) => {
+	if (event.data.type === "player") {
+		player = event.data.player;
+	}
+});
 
-	window.addEventListener("keydown", (event) => {
-		const key = event.key.toLowerCase();
+window.opener.postMessage(
+	{ type: "ready" },
+	window.location.origin
+);
 
-		if (["w", "a", "s", "d"].includes(key)) {
-			keys.add(key);
-		}
+requestAnimationFrame(render);
 
-		if (key === "r") {
-			window.opener.postMessage(
-				{
-					type: "reset",
-					x: window.screenX + window.innerWidth / 2,
-					y: window.screenY + window.innerHeight / 2
-				},
-				window.location.origin
-			);
-		}
-	});
-
-	window.addEventListener("keyup", (event) => {
-		keys.delete(event.key.toLowerCase());
-	});
-
-	window.addEventListener("blur", () => keys.clear());
-
-	window.addEventListener("message", (event) => {
-		if (event.data.type === "player") {
-			player = event.data.player;
-		}
-	});
-}
-
-function lockWindowSize() {
-	window.resizeTo(lockedWindowSize.width, lockedWindowSize.height);
-	resize();
-}
-
-function resize() {
-	const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-	canvas.width = window.innerWidth * pixelRatio;
-	canvas.height = window.innerHeight * pixelRatio;
-	canvas.style.width = `${window.innerWidth}px`;
-	canvas.style.height = `${window.innerHeight}px`;
-	context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+function resizeCanvas() {
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
 }
 
 function movePlayer(deltaTime) {
@@ -108,12 +80,6 @@ function drawPlayer() {
 	context.fill();
 }
 
-function drawInstructions() {
-	context.fillStyle = "rgba(255, 255, 255, 0.75)";
-	context.font = "16px system-ui, sans-serif";
-	context.fillText("Use WASD to move - R resets the dot", 20, 32);
-}
-
 function render(currentTime) {
 	const deltaTime = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
 	lastFrameTime = currentTime;
@@ -121,8 +87,7 @@ function render(currentTime) {
 	movePlayer(deltaTime);
 
 	context.fillStyle = "#070a12";
-	context.fillRect(0, 0, window.innerWidth, window.innerHeight);
-	drawInstructions();
+	context.fillRect(0, 0, canvas.width, canvas.height);
 	drawPlayer();
 
 	requestAnimationFrame(render);
