@@ -11,29 +11,36 @@ const player = new Player();
 let piece;
 let startX;
 let startY;
+let cellWidth;
+let cellHeight;
 let lastFrameTime = performance.now();
+let windowX = window.screenX;
+let windowY = window.screenY;
 
-document.body.appendChild(canvas);
-document.body.appendChild(playerCanvas);
+document.body.append(canvas, playerCanvas);
 resizeCanvas();
 
 window.addEventListener("resize", () => {
+	window.moveTo(windowX, windowY);
 	window.resizeTo(windowWidth, windowHeight);
 	resizeCanvas();
 	drawPiece();
 });
 
 window.addEventListener("message", (event) => {
-	if (event.data.type === "initialize") {
-		piece = event.data.piece;
-		startX = event.data.start_x;
-		startY = event.data.start_y;
-		player.setPosition(event.data.player);
+	const data = event.data;
+
+	if (data.type === "initialize") {
+		piece = data.piece;
+		startX = data.start_x;
+		startY = data.start_y;
+		player.setMaze(data.maze);
+		player.setPosition(data.player);
 		drawPiece();
 	}
 
-	if (event.data.type === "player") {
-		player.setPosition(event.data.player);
+	if (data.type === "player") {
+		player.setPosition(data.player);
 	}
 });
 
@@ -57,41 +64,47 @@ function drawPiece() {
 
 	if (!piece) return;
 
-	const cellWidth = canvas.width / piece[0].length;
-	const cellHeight = canvas.height / piece.length;
+	cellWidth = canvas.width / piece[0].length;
+	cellHeight = canvas.height / piece.length;
+	context.fillStyle = "#ffffff";
+	context.strokeStyle = "#ff0000";
+	context.lineWidth = 3;
 
 	for (let x = 0; x < piece.length; x += 1) {
 		for (let y = 0; y < piece[x].length; y += 1) {
-			if (piece[x][y] === 0) {
-				const left = y * cellWidth;
-				const top = x * cellHeight;
-				const padding = Math.min(cellWidth, cellHeight) * 0.18;
+			if (piece[x][y] !== 0) continue;
 
-				context.fillStyle = "#ffffff";
-				context.fillRect(left, top, cellWidth, cellHeight);
+			const left = y * cellWidth;
+			const top = x * cellHeight;
+			const padding = Math.min(cellWidth, cellHeight) * 0.18;
 
-				context.strokeStyle = "#ff0000";
-				context.lineWidth = 3;
-				context.strokeRect(left, top, cellWidth, cellHeight);
+			context.fillRect(left, top, cellWidth, cellHeight);
+			context.strokeRect(left, top, cellWidth, cellHeight);
 
-				context.beginPath();
-				context.moveTo(left + padding, top + padding);
-				context.lineTo(
-					left + cellWidth - padding,
-					top + cellHeight - padding
-				);
-				context.moveTo(left + cellWidth - padding, top + padding);
-				context.lineTo(left + padding, top + cellHeight - padding);
-				context.stroke();
-			}
+			context.beginPath();
+			context.moveTo(left + padding, top + padding);
+			context.lineTo(
+				left + cellWidth - padding,
+				top + cellHeight - padding
+			);
+			context.moveTo(left + cellWidth - padding, top + padding);
+			context.lineTo(left + padding, top + cellHeight - padding);
+			context.stroke();
 		}
 	}
-
 }
 
 function render(currentTime) {
 	const deltaTime = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
 	lastFrameTime = currentTime;
+
+	if (
+		window.outerWidth === windowWidth &&
+		window.outerHeight === windowHeight
+	) {
+		windowX = window.screenX;
+		windowY = window.screenY;
+	}
 
 	player.update(deltaTime);
 
@@ -103,9 +116,6 @@ function render(currentTime) {
 	);
 
 	if (piece) {
-		const cellWidth = canvas.width / piece[0].length;
-		const cellHeight = canvas.height / piece.length;
-
 		player.draw(
 			playerContext,
 			startX,

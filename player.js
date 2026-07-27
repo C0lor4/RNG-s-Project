@@ -1,56 +1,66 @@
 const SPEED = 2;
 const SIZE = 0.7;
-const SOURCE = {
-	x: 11,
-	y: 18,
-	width: 69,
-	height: 156
-};
-const HITBOX_WIDTH = 0.4;
-const HITBOX_HEIGHT = 0.8;
+const FEET_OFFSET = SIZE / 2;
+const SOURCE = { x: 10, y: 15, width: 75, height: 170 };
+const HITBOX = { width: 0.4, height: 0.8 };
 
 class Player {
 	constructor() {
 		this.x = 1;
 		this.y = 1;
+		this.maze = [];
 		this.keys = new Set();
 		this.image = new Image();
 		this.image.src = "./Player.png";
 
 		window.addEventListener("keydown", (event) => {
 			const key = event.key.toLowerCase();
-
-			if (["w", "a", "s", "d"].includes(key)) {
-				this.keys.add(key);
-			}
+			if ("wasd".includes(key)) this.keys.add(key);
 		});
 
 		window.addEventListener("keyup", (event) => {
 			this.keys.delete(event.key.toLowerCase());
 		});
 
-		window.addEventListener("blur", () => {
-			this.keys.clear();
-		});
+		window.addEventListener("blur", () => this.keys.clear());
 	}
 
-	setPosition(position) {
-		this.x = position.x;
-		this.y = position.y;
+	setPosition({ x, y }) {
+		this.x = x;
+		this.y = y;
+	}
+
+	setMaze(maze) {
+		this.maze = maze;
+	}
+
+	isPath(x, y) {
+		const row = Math.floor(x + 0.5);
+		const column = Math.floor(y + 0.5);
+		return this.maze[row]?.[column] === 1;
+	}
+
+	canStand(x, y) {
+		return this.isPath(x, y) && this.isPath(x + FEET_OFFSET, y);
 	}
 
 	update(deltaTime) {
-		let x = Number(this.keys.has("s")) - Number(this.keys.has("w"));
-		let y = Number(this.keys.has("d")) - Number(this.keys.has("a"));
+		const moveX = Number(this.keys.has("s")) - Number(this.keys.has("w"));
+		const moveY = Number(this.keys.has("d")) - Number(this.keys.has("a"));
+		const length = Math.hypot(moveX, moveY);
 
-		if (x === 0 && y === 0) return;
+		if (length === 0) return;
 
-		const length = Math.hypot(x, y);
-		x = x / length * SPEED * deltaTime;
-		y = y / length * SPEED * deltaTime;
+		const distance = SPEED * deltaTime / length;
+		const oldX = this.x;
+		const oldY = this.y;
+		const nextX = this.x + moveX * distance;
+		const nextY = this.y + moveY * distance;
 
-		this.x += x;
-		this.y += y;
+		if (this.canStand(nextX, this.y)) this.x = nextX;
+		if (this.canStand(this.x, nextY)) this.y = nextY;
+
+		if (this.x === oldX && this.y === oldY) return;
 
 		window.opener.postMessage(
 			{ type: "move", x: this.x, y: this.y },
@@ -59,33 +69,25 @@ class Player {
 	}
 
 	draw(context, startX, startY, cellWidth, cellHeight) {
-		if (
-			!this.image.complete ||
-			this.image.naturalWidth === 0
-		) {
-			return;
-		}
+		if (!this.image.complete) return;
 
-		const maximumWidth = cellWidth * SIZE;
-		const maximumHeight = cellHeight * SIZE;
 		const scale = Math.min(
-			maximumWidth / SOURCE.width,
-			maximumHeight / SOURCE.height
+			cellWidth * SIZE / SOURCE.width,
+			cellHeight * SIZE / SOURCE.height
 		);
 		const width = SOURCE.width * scale;
 		const height = SOURCE.height * scale;
 		const centerX = (this.y - startY + 0.5) * cellWidth;
 		const centerY = (this.x - startX + 0.5) * cellHeight;
-		const hitboxWidth = width * HITBOX_WIDTH;
-		const hitboxHeight = height * HITBOX_HEIGHT;
+		const halfHitboxWidth = width * HITBOX.width / 2;
+		const halfHitboxHeight = height * HITBOX.height / 2;
+		const outsideWindow =
+			centerX + halfHitboxWidth <= 0 ||
+			centerX - halfHitboxWidth >= context.canvas.width ||
+			centerY + halfHitboxHeight <= 0 ||
+			centerY - halfHitboxHeight >= context.canvas.height;
 
-		const hitboxOutsideWindow =
-			centerX + hitboxWidth / 2 <= 0 ||
-			centerX - hitboxWidth / 2 >= context.canvas.width ||
-			centerY + hitboxHeight / 2 <= 0 ||
-			centerY - hitboxHeight / 2 >= context.canvas.height;
-
-		if (hitboxOutsideWindow) return;
+		if (outsideWindow) return;
 
 		context.drawImage(
 			this.image,
