@@ -1,12 +1,14 @@
 import { initialize } from "./initialize.js";
+import WindowRepulsion from "./WindowRepulsion.js";
 
 /**
  * Setup the windows
 */
 
-const LAYOUT_STORAGE_KEY = "window-maze-layout";
-const WINDOW_GAP = 20;
+const ALLOWED_OVERLAP = 10;
 let createdWindows = [];
+let player = { x: 0, y: 0 };
+const windowRepulsion = new WindowRepulsion(ALLOWED_OVERLAP);
 
 export function createWindows(height, width) {
 	const index = createdWindows.length;
@@ -14,10 +16,13 @@ export function createWindows(height, width) {
 	const position = findRandomPosition(height, width);
 	const x = position.x;
 	const y = position.y;
+	const windowName = `${id}-${Date.now()}`;
+	const gameUrl = new URL("./game.html", window.location.href);
+	gameUrl.searchParams.set("pieceId", id);
 
 	const popup = window.open(
-		`./game.html?pieceId=${id}`,
-		id,
+		gameUrl.href,
+		windowName,
 		[
 			"popup=yes",
 			`height=${height}`,
@@ -29,14 +34,15 @@ export function createWindows(height, width) {
 
 	const windowInformation = {
 		id,
+		popup,
 		height,
 		width,
 		x,
-		y,
-		opened: popup !== null
+		y
 	};
 
 	createdWindows.push(windowInformation);
+	windowRepulsion.addWindow(popup, id);
 	return windowInformation;
 }
 
@@ -62,10 +68,10 @@ function findRandomPosition(height, width) {
 
 function windowsOverlap(first, second) {
 	return (
-		first.x < second.x + second.width + WINDOW_GAP &&
-		first.x + first.width + WINDOW_GAP > second.x &&
-		first.y < second.y + second.height + WINDOW_GAP &&
-		first.y + first.height + WINDOW_GAP > second.y
+		first.x < second.x + second.width - ALLOWED_OVERLAP &&
+		first.x + first.width - ALLOWED_OVERLAP > second.x &&
+		first.y < second.y + second.height - ALLOWED_OVERLAP &&
+		first.y + first.height - ALLOWED_OVERLAP > second.y
 	);
 }
 
@@ -81,14 +87,44 @@ function startGame() {
 		createWindows(piece.height, piece.width);
 	}
 
-	localStorage.setItem(
-		LAYOUT_STORAGE_KEY,
-		JSON.stringify({
-			pieces,
-			windows: createdWindows
-		})
-	);
+	const firstWindow = createdWindows[0];
+	player.x = firstWindow.x + firstWindow.width / 2;
+	player.y = firstWindow.y + firstWindow.height / 2;
+	sendPlayer();
 }
+
+function sendPlayer(oneWindow) {
+	const windows = oneWindow
+		? [{ popup: oneWindow }]
+		: createdWindows;
+
+	for (const item of windows) {
+		if (!item.popup.closed) {
+			item.popup.postMessage(
+				{ type: "player", player },
+				window.location.origin
+			);
+		}
+	}
+}
+
+window.addEventListener("message", (event) => {
+	if (event.data.type === "ready") {
+		sendPlayer(event.source);
+	}
+
+	if (event.data.type === "move") {
+		player.x += event.data.x;
+		player.y += event.data.y;
+		sendPlayer();
+	}
+
+	if (event.data.type === "reset") {
+		player.x = event.data.x;
+		player.y = event.data.y;
+		sendPlayer();
+	}
+});
 
 const startButton = document.querySelector("#start-button");
 startButton.addEventListener("click", startGame);
