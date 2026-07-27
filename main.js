@@ -1,42 +1,39 @@
-const PLAYER_RADIUS = 14;
-const PLAYER_SPEED = 260;
+import Player from "./Player.js";
 
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
-const keys = new Set();
+const playerCanvas = document.createElement("canvas");
+const playerContext = playerCanvas.getContext("2d");
 const windowWidth = window.outerWidth;
 const windowHeight = window.outerHeight;
+const player = new Player();
 
-let player;
+let piece;
+let startX;
+let startY;
 let lastFrameTime = performance.now();
 
 document.body.appendChild(canvas);
+document.body.appendChild(playerCanvas);
 resizeCanvas();
 
 window.addEventListener("resize", () => {
 	window.resizeTo(windowWidth, windowHeight);
 	resizeCanvas();
-});
-
-window.addEventListener("keydown", (event) => {
-	const key = event.key.toLowerCase();
-
-	if (["w", "a", "s", "d"].includes(key)) {
-		keys.add(key);
-	}
-});
-
-window.addEventListener("keyup", (event) => {
-	keys.delete(event.key.toLowerCase());
-});
-
-window.addEventListener("blur", () => {
-	keys.clear();
+	drawPiece();
 });
 
 window.addEventListener("message", (event) => {
+	if (event.data.type === "initialize") {
+		piece = event.data.piece;
+		startX = event.data.start_x;
+		startY = event.data.start_y;
+		player.setPosition(event.data.player);
+		drawPiece();
+	}
+
 	if (event.data.type === "player") {
-		player = event.data.player;
+		player.setPosition(event.data.player);
 	}
 });
 
@@ -50,45 +47,73 @@ requestAnimationFrame(render);
 function resizeCanvas() {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
+	playerCanvas.width = window.innerWidth;
+	playerCanvas.height = window.innerHeight;
 }
 
-function movePlayer(deltaTime) {
-	let x = Number(keys.has("d")) - Number(keys.has("a"));
-	let y = Number(keys.has("s")) - Number(keys.has("w"));
+function drawPiece() {
+	context.fillStyle = "#808080";
+	context.fillRect(0, 0, canvas.width, canvas.height);
 
-	if (x === 0 && y === 0) return;
+	if (!piece) return;
 
-	const length = Math.hypot(x, y);
-	x = x / length * PLAYER_SPEED * deltaTime;
-	y = y / length * PLAYER_SPEED * deltaTime;
+	const cellWidth = canvas.width / piece[0].length;
+	const cellHeight = canvas.height / piece.length;
 
-	window.opener.postMessage(
-		{ type: "move", x, y },
-		window.location.origin
-	);
-}
+	for (let x = 0; x < piece.length; x += 1) {
+		for (let y = 0; y < piece[x].length; y += 1) {
+			if (piece[x][y] === 0) {
+				const left = y * cellWidth;
+				const top = x * cellHeight;
+				const padding = Math.min(cellWidth, cellHeight) * 0.18;
 
-function drawPlayer() {
-	if (!player) return;
+				context.fillStyle = "#ffffff";
+				context.fillRect(left, top, cellWidth, cellHeight);
 
-	const x = player.x - window.screenX;
-	const y = player.y - window.screenY;
+				context.strokeStyle = "#ff0000";
+				context.lineWidth = 3;
+				context.strokeRect(left, top, cellWidth, cellHeight);
 
-	context.beginPath();
-	context.arc(x, y, PLAYER_RADIUS, 0, Math.PI * 2);
-	context.fillStyle = "#8be9fd";
-	context.fill();
+				context.beginPath();
+				context.moveTo(left + padding, top + padding);
+				context.lineTo(
+					left + cellWidth - padding,
+					top + cellHeight - padding
+				);
+				context.moveTo(left + cellWidth - padding, top + padding);
+				context.lineTo(left + padding, top + cellHeight - padding);
+				context.stroke();
+			}
+		}
+	}
+
 }
 
 function render(currentTime) {
 	const deltaTime = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
 	lastFrameTime = currentTime;
 
-	movePlayer(deltaTime);
+	player.update(deltaTime);
 
-	context.fillStyle = "#070a12";
-	context.fillRect(0, 0, canvas.width, canvas.height);
-	drawPlayer();
+	playerContext.clearRect(
+		0,
+		0,
+		playerCanvas.width,
+		playerCanvas.height
+	);
+
+	if (piece) {
+		const cellWidth = canvas.width / piece[0].length;
+		const cellHeight = canvas.height / piece.length;
+
+		player.draw(
+			playerContext,
+			startX,
+			startY,
+			cellWidth,
+			cellHeight
+		);
+	}
 
 	requestAnimationFrame(render);
 }

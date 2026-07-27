@@ -1,61 +1,63 @@
 import { initialize } from "./initialize.js";
 import WindowRepulsion from "./WindowRepulsion.js";
 
-/**
- * Setup the windows
-*/
-
+const CELL_SIZE = 100;
 const OVERLAP = 16;
+const player = { x: 1, y: 1 };
+
 let createdWindows = [];
-let player = { x: 0, y: 0 };
 const windowRepulsion = new WindowRepulsion(OVERLAP);
 
-export function createWindows(height, width) {
-	const index = createdWindows.length;
-	const id = `piece-${index + 1}`;
-	const position = findRandomPosition(height, width);
-	const x = position.x;
-	const y = position.y;
-	const windowName = `${id}-${Date.now()}`;
+function getPiece(maze, windowData) {
+	return maze
+		.slice(windowData.start_x, windowData.end_x + 1)
+		.map((row) => row.slice(windowData.start_y, windowData.end_y + 1));
+}
+
+function createWindow(windowData, piece) {
+	const width = piece[0].length * CELL_SIZE;
+	const height = piece.length * CELL_SIZE;
+	const position = findRandomPosition(width, height);
+	const left = position.left;
+	const top = position.top;
 	const gameUrl = new URL("./game.html", window.location.href);
-	gameUrl.searchParams.set("pieceId", id);
+	gameUrl.searchParams.set("pieceId", windowData.id);
 
 	const popup = window.open(
 		gameUrl.href,
-		windowName,
+		`${windowData.id}-${Date.now()}`,
 		[
 			"popup=yes",
 			`height=${height}`,
 			`width=${width}`,
-			`left=${x}`,
-			`top=${y}`
+			`left=${left}`,
+			`top=${top}`
 		].join(",")
 	);
 
-	const windowInformation = {
-		id,
+	createdWindows.push({
+		...windowData,
 		popup,
-		height,
+		piece,
 		width,
-		x,
-		y
-	};
+		height,
+		left,
+		top
+	});
 
-	createdWindows.push(windowInformation);
-	windowRepulsion.addWindow(popup, id);
-	return windowInformation;
+	windowRepulsion.addWindow(popup, windowData.id);
 }
 
-function findRandomPosition(height, width) {
+function findRandomPosition(width, height) {
 	const screenLeft = screen.availLeft || 0;
 	const screenTop = screen.availTop || 0;
-	const maximumX = screenLeft + screen.availWidth - width;
-	const maximumY = screenTop + screen.availHeight - height;
+	const maximumLeft = screenLeft + screen.availWidth - width;
+	const maximumTop = screenTop + screen.availHeight - height;
 
 	for (let attempt = 0; attempt < 100; attempt += 1) {
 		const position = {
-			x: randomInteger(screenLeft, maximumX),
-			y: randomInteger(screenTop, maximumY),
+			left: randomInteger(screenLeft, maximumLeft),
+			top: randomInteger(screenTop, maximumTop),
 			width,
 			height
 		};
@@ -65,9 +67,9 @@ function findRandomPosition(height, width) {
 		}
 	}
 
-	for (let y = screenTop; y <= maximumY; y += 10) {
-		for (let x = screenLeft; x <= maximumX; x += 10) {
-			const position = { x, y, width, height };
+	for (let top = screenTop; top <= maximumTop; top += 10) {
+		for (let left = screenLeft; left <= maximumLeft; left += 10) {
+			const position = { left, top, width, height };
 
 			if (!createdWindows.some((other) => windowsOverlap(position, other))) {
 				return position;
@@ -75,15 +77,15 @@ function findRandomPosition(height, width) {
 		}
 	}
 
-	return { x: screenLeft, y: screenTop, width, height };
+	return { left: screenLeft, top: screenTop };
 }
 
 function windowsOverlap(first, second) {
 	return (
-		first.x < second.x + second.width - OVERLAP &&
-		first.x + first.width - OVERLAP > second.x &&
-		first.y < second.y + second.height - OVERLAP &&
-		first.y + first.height - OVERLAP > second.y
+		first.left < second.left + second.width - OVERLAP &&
+		first.left + first.width - OVERLAP > second.left &&
+		first.top < second.top + second.height - OVERLAP &&
+		first.top + first.height - OVERLAP > second.top
 	);
 }
 
@@ -92,45 +94,49 @@ function randomInteger(minimum, maximum) {
 }
 
 function startGame() {
-	const pieces = initialize();
+	const data = initialize();
+	const maze = data[0];
+	const windows = data.slice(1);
+
 	createdWindows = [];
 
-	for (const piece of pieces) {
-		createWindows(piece.height, piece.width);
+	for (const windowData of windows) {
+		const piece = getPiece(maze, windowData);
+		createWindow(windowData, piece);
 	}
 
-	const firstWindow = createdWindows[0];
-	player.x = firstWindow.x + firstWindow.width / 2;
-	player.y = firstWindow.y + firstWindow.height / 2;
-	sendPlayer();
+	createdWindows[0].popup.focus();
 }
 
-function sendPlayer(oneWindow) {
-	const windows = oneWindow
-		? [{ popup: oneWindow }]
-		: createdWindows;
+window.addEventListener("message", (event) => {
+	if (event.data.type === "ready") {
+		const currentWindow = createdWindows.find(
+			(item) => item.popup === event.source
+		);
 
-	for (const item of windows) {
-		if (!item.popup.closed) {
+		event.source.postMessage(
+			{
+				type: "initialize",
+				piece: currentWindow.piece,
+				start_x: currentWindow.start_x,
+				start_y: currentWindow.start_y,
+				player
+			},
+			window.location.origin
+		);
+	}
+
+	if (event.data.type === "move") {
+		player.x = event.data.x;
+		player.y = event.data.y;
+
+		for (const item of createdWindows) {
 			item.popup.postMessage(
 				{ type: "player", player },
 				window.location.origin
 			);
 		}
 	}
-}
-
-window.addEventListener("message", (event) => {
-	if (event.data.type === "ready") {
-		sendPlayer(event.source);
-	}
-
-	if (event.data.type === "move") {
-		player.x += event.data.x;
-		player.y += event.data.y;
-		sendPlayer();
-	}
-
 });
 
 const startButton = document.querySelector("#start-button");
