@@ -13,7 +13,7 @@ const mazeSizes = [
 	{ width: 33, height: 21 },
 	{ width: 41, height: 25 }
 ];
-const pieceCounts = [16, 32];
+const pieceCounts = [8, 16, 32];
 
 let createdWindows = [];
 let maze;

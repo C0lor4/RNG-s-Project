@@ -33,7 +33,7 @@ function shuffle(arr) {
     return arr;
 }
 
-export function initialize(width = 25, height = 17, pieceCount = 16) {
+export function initialize(width = 25, height = 17, pieceCount = 8) {
     const pieceColumns = 4;
     const pieceRows = pieceCount / pieceColumns;
     const grid = Array.from({ length: height }, () => Array(width).fill(0));
