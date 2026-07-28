@@ -1,13 +1,16 @@
 export const OVERLAP = 16;
-const CORNER_DIFFERENCE = 16;
-const RELEASE_DELAY = 140;
-const UPDATE_INTERVAL = 20;
 
 class WindowRepulsion {
 	constructor(allowedOverlap = OVERLAP) {
 		this.allowedOverlap = allowedOverlap;
 		this.windows = [];
-		window.setInterval(() => this.update(), UPDATE_INTERVAL);
+		this.animate = this.animate.bind(this);
+		window.requestAnimationFrame(this.animate);
+	}
+
+	animate() {
+		this.update();
+		window.requestAnimationFrame(this.animate);
 	}
 
 	addWindow(popup, id) {
@@ -20,9 +23,9 @@ class WindowRepulsion {
 			top: popup.screenY,
 			width: popup.outerWidth,
 			height: popup.outerHeight,
-			lastMovedAt: performance.now(),
-			movement: 0,
-			ignoreMovementUntil: 0
+			deltaX: 0,
+			deltaY: 0,
+			movingByCode: false
 		});
 	}
 
@@ -35,121 +38,88 @@ class WindowRepulsion {
 	}
 
 	update() {
-		const currentTime = performance.now();
-
 		this.windows = this.windows.filter((item) => !item.popup.closed);
 
 		for (const item of this.windows) {
-			this.updateWindowInformation(item, currentTime);
+			this.updateWindowInformation(item);
 		}
 
-		for (
-			let firstIndex = 0;
-			firstIndex < this.windows.length;
-			firstIndex += 1
-		) {
-			for (let secondIndex = firstIndex + 1; secondIndex < this.windows.length; secondIndex += 1) {
-				this.resolveCollision(
-					this.windows[firstIndex],
-					this.windows[secondIndex],
-					currentTime
-				);
-			}
+		const queue = this.windows
+			.filter((item) => item.deltaX || item.deltaY)
+			.map((item) => ({
+				item,
+				deltaX: item.deltaX,
+				deltaY: item.deltaY
+			}));
+		const movedWindows = new Set(queue.map((movement) => movement.item));
+
+		for (let index = 0; index < queue.length; index += 1) {
+			this.pushCollidingWindows(
+				queue[index],
+				queue,
+				movedWindows
+			);
 		}
 	}
 
-	updateWindowInformation(item, currentTime) {
+	updateWindowInformation(item) {
 		const newLeft = item.popup.screenX;
 		const newTop = item.popup.screenY;
-		const movement = Math.hypot(newLeft - item.left, newTop - item.top);
+		const deltaX = newLeft - item.left;
+		const deltaY = newTop - item.top;
+		const movement = Math.hypot(deltaX, deltaY);
 
-		item.left = newLeft;
-		item.top = newTop;
 		item.width = item.popup.outerWidth;
 		item.height = item.popup.outerHeight;
-		item.movement =
-			currentTime < item.ignoreMovementUntil ? 0 : movement;
 
-		if (item.movement > 0) {
-			item.lastMovedAt = currentTime;
-		}
-	}
+		if (item.movingByCode) {
+			item.deltaX = 0;
+			item.deltaY = 0;
 
-	resolveCollision(first, second, currentTime) {
-		const overlapX =
-			Math.min(
-				first.left + first.width,
-				second.left + second.width
-			) - Math.max(first.left, second.left);
-		const overlapY =
-			Math.min(
-				first.top + first.height,
-				second.top + second.height
-			) - Math.max(first.top, second.top);
+			if (movement <= 1) {
+				item.left = newLeft;
+				item.top = newTop;
+				item.movingByCode = false;
+			} else {
+				item.popup.moveTo(item.left, item.top);
+			}
 
-		if (overlapX <= this.allowedOverlap || overlapY <= this.allowedOverlap) return;
-
-		const dragged = this.getDraggedWindow(first, second);
-		const pushed = dragged === first ? second : first;
-		const isCornerCollision = Math.abs(overlapX - overlapY) <= CORNER_DIFFERENCE;
-		const dragHasStopped = currentTime - dragged.lastMovedAt >= RELEASE_DELAY;
-
-		// Wait until a corner drag stops so the push direction cannot flicker.
-		if (isCornerCollision && !dragHasStopped) return;
-
-		if (isCornerCollision) {
-			this.teleportWindow(pushed, currentTime);
-		} else {
-			this.pushWindow(dragged, pushed, overlapX, overlapY, currentTime);
-		}
-	}
-
-	getDraggedWindow(first, second) {
-		if (first.movement !== second.movement) {
-			return first.movement > second.movement ? first : second;
-		}
-
-		if (first.lastMovedAt !== second.lastMovedAt) {
-			return first.lastMovedAt > second.lastMovedAt ? first : second;
-		}
-
-		return first.id < second.id ? first : second;
-	}
-
-	pushWindow(dragged, pushed, overlapX, overlapY, currentTime) {
-		const draggedCenterX = dragged.left + dragged.width / 2;
-		const draggedCenterY = dragged.top + dragged.height / 2;
-		const pushedCenterX = pushed.left + pushed.width / 2;
-		const pushedCenterY = pushed.top + pushed.height / 2;
-		let left = pushed.left;
-		let top = pushed.top;
-
-		if (overlapX < overlapY) {
-			left = draggedCenterX < pushedCenterX
-				? dragged.left + dragged.width - this.allowedOverlap
-				: dragged.left - pushed.width + this.allowedOverlap;
-		} else {
-			top = draggedCenterY < pushedCenterY
-				? dragged.top + dragged.height - this.allowedOverlap
-				: dragged.top - pushed.height + this.allowedOverlap;
-		}
-
-		const bounds = getAvailableScreenBounds();
-		const hasSpace =
-			left >= bounds.left &&
-			top >= bounds.top &&
-			left + pushed.width <= bounds.right &&
-			top + pushed.height <= bounds.bottom;
-
-		if (!hasSpace) {
-			this.teleportWindow(pushed, currentTime);
 			return;
 		}
 
-		this.moveWindow(pushed, left, top, currentTime);
+		item.left = newLeft;
+		item.top = newTop;
+		item.deltaX = deltaX;
+		item.deltaY = deltaY;
 	}
 
-	teleportWindow(pushed, currentTime) {
+	pushCollidingWindows(movement, queue, movedWindows) {
+		const { item, deltaX, deltaY } = movement;
+
+		for (const other of this.windows) {
+			if (
+				movedWindows.has(other) ||
+				!windowsOverlap(item, other, this.allowedOverlap)
+			) {
+				continue;
+			}
+
+			movedWindows.add(other);
+
+			const left = other.left + deltaX;
+			const top = other.top + deltaY;
+
+			if (!fitsOnScreen(other, left, top)) {
+				this.teleportWindow(other);
+				continue;
+			}
+
+			this.moveWindow(other, left, top);
+			queue.push({ item: other, deltaX, deltaY });
+		}
+	}
+
+	teleportWindow(pushed) {
 		const position = findFreePosition(
 			pushed.width,
 			pushed.height,
@@ -163,16 +133,17 @@ class WindowRepulsion {
 		this.moveWindow(
 			pushed,
 			position.left,
-			position.top,
-			currentTime
+			position.top
 		);
 	}
 
-	moveWindow(pushed, left, top, currentTime) {
+	moveWindow(pushed, left, top) {
 		pushed.left = Math.round(left);
 		pushed.top = Math.round(top);
-		pushed.movement = 0;
-		pushed.ignoreMovementUntil = currentTime + RELEASE_DELAY;
+		pushed.deltaX = 0;
+		pushed.deltaY = 0;
+		pushed.movingByCode = true;
+		pushed.popup.setManagedPosition?.(pushed.left, pushed.top);
 		pushed.popup.moveTo(pushed.left, pushed.top);
 	}
 }
@@ -183,6 +154,16 @@ function windowsOverlap(first, second, allowedOverlap) {
 		first.left + first.width - allowedOverlap > second.left &&
 		first.top < second.top + second.height - allowedOverlap &&
 		first.top + first.height - allowedOverlap > second.top
+	);
+}
+
+function fitsOnScreen(item, left, top) {
+	const bounds = getAvailableScreenBounds();
+	return (
+		left >= bounds.left &&
+		top >= bounds.top &&
+		left + item.width <= bounds.right &&
+		top + item.height <= bounds.bottom
 	);
 }
 

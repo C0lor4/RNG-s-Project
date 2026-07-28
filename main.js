@@ -16,9 +16,16 @@ let windowHeight;
 let lastFrameTime = performance.now();
 let windowX = window.screenX;
 let windowY = window.screenY;
+let managedPosition;
 
 document.body.append(canvas, playerCanvas);
 resizeCanvas();
+
+window.setManagedPosition = (left, top) => {
+	windowX = left;
+	windowY = top;
+	managedPosition = { left, top };
+};
 
 window.addEventListener("resize", () => {
 	if (!windowWidth) return;
@@ -109,6 +116,17 @@ function render(currentTime) {
 	lastFrameTime = currentTime;
 
 	if (
+		managedPosition &&
+		Math.hypot(
+			window.screenX - managedPosition.left,
+			window.screenY - managedPosition.top
+		) <= 1
+	) {
+		windowX = window.screenX;
+		windowY = window.screenY;
+		managedPosition = undefined;
+	} else if (
+		!managedPosition &&
 		window.outerWidth === windowWidth &&
 		window.outerHeight === windowHeight
 	) {
