@@ -17,20 +17,21 @@ class WindowRepulsion {
 		window.requestAnimationFrame(this.animate);
 	}
 
-	addWindow(popup, id) {
+	addWindow(popup, id, left = popup?.screenX, top = popup?.screenY) {
 		if (!popup) return;
 
 		this.windows.push({
 			id,
 			popup,
-			left: popup.screenX,
-			top: popup.screenY,
+			left: Math.round(left),
+			top: Math.round(top),
 			width: popup.outerWidth,
 			height: popup.outerHeight,
 			deltaX: 0,
 			deltaY: 0,
-			movingByCode: false
+			movingByCode: true
 		});
+		popup.moveTo(left, top);
 	}
 
 	reset() {
@@ -44,6 +45,16 @@ class WindowRepulsion {
 	syncWindow(popup, { left, top, width, height }) {
 		const item = this.windows.find((windowItem) => windowItem.popup === popup);
 		if (!item) return;
+
+		if (
+			item.movingByCode &&
+			Math.hypot(left - item.left, top - item.top) > 1
+		) {
+			item.width = width;
+			item.height = height;
+			item.popup.moveTo(item.left, item.top);
+			return;
+		}
 
 		item.left = left;
 		item.top = top;

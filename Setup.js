@@ -7,6 +7,7 @@ import WindowRepulsion, { OVERLAP } from "./WindowRepulsion.js";
 const player = { x: 1, y: 1 };
 const music = new Audio("./music.mp3");
 const WIN_DISTANCE = 0.5;
+const MIN_POPUP_SIZE = 100;
 const mazeSizes = [
 	{ width: 25, height: 17 },
 	{ width: 33, height: 21 },
@@ -30,10 +31,6 @@ function getPiece(maze, windowData) {
 }
 
 function createLayout(maze, windows) {
-	const columns = Math.ceil(Math.sqrt(windows.length));
-	const rows = Math.ceil(windows.length / columns);
-	const slotWidth = screen.availWidth / columns;
-	const slotHeight = screen.availHeight / rows;
 	const frameWidth = window.outerWidth - window.innerWidth;
 	const frameHeight = window.outerHeight - window.innerHeight;
 	const pieces = windows.map((windowData) => ({
@@ -42,22 +39,60 @@ function createLayout(maze, windows) {
 	}));
 	const maximumColumns = Math.max(...pieces.map(({ piece }) => piece[0].length));
 	const maximumRows = Math.max(...pieces.map(({ piece }) => piece.length));
-	const cellSize = Math.max(1, Math.floor(Math.min(
+	const mazeCellSize = Math.min(
 		screen.availWidth / maze[0].length,
-		screen.availHeight / maze.length,
-		(slotWidth - frameWidth) / maximumColumns,
-		(slotHeight - frameHeight) / maximumRows
-	)));
+		screen.availHeight / maze.length
+	);
+	let layout = {
+		columns: Math.ceil(Math.sqrt(windows.length)),
+		cellSize: 1,
+		emptySlots: Infinity
+	};
+
+	for (let columns = 1; columns <= windows.length; columns++) {
+		const rows = Math.ceil(windows.length / columns);
+		const slotWidth = screen.availWidth / columns;
+		const slotHeight = screen.availHeight / rows;
+
+		if (
+			slotWidth < frameWidth + MIN_POPUP_SIZE ||
+			slotHeight < frameHeight + MIN_POPUP_SIZE
+		) {
+			continue;
+		}
+
+		const cellSize = Math.floor(Math.min(
+			mazeCellSize,
+			(slotWidth - frameWidth) / maximumColumns,
+			(slotHeight - frameHeight) / maximumRows
+		));
+		const emptySlots = columns * rows - windows.length;
+
+		if (
+			cellSize > layout.cellSize ||
+			cellSize === layout.cellSize && emptySlots < layout.emptySlots
+		) {
+			layout = { columns, cellSize, emptySlots };
+		}
+	}
+
+	const columns = layout.columns;
+	const rows = Math.ceil(windows.length / columns);
+	const slotWidth = screen.availWidth / columns;
+	const slotHeight = screen.availHeight / rows;
+	const cellSize = Math.max(1, layout.cellSize);
 	const screenLeft = screen.availLeft || 0;
 	const screenTop = screen.availTop || 0;
 
 	return pieces.map(({ windowData, piece }, index) => {
-		const width = piece[0].length * cellSize;
-		const height = piece.length * cellSize;
+		const width = Math.max(piece[0].length * cellSize, MIN_POPUP_SIZE);
+		const height = Math.max(piece.length * cellSize, MIN_POPUP_SIZE);
+		const popupWidth = width + frameWidth;
+		const popupHeight = height + frameHeight;
 		const slotLeft = screenLeft + index % columns * slotWidth;
 		const slotTop = screenTop + Math.floor(index / columns) * slotHeight;
-		const left = slotLeft + Math.random() * (slotWidth - width - frameWidth);
-		const top = slotTop + Math.random() * (slotHeight - height - frameHeight);
+		const left = slotLeft + Math.random() * Math.max(0, slotWidth - popupWidth);
+		const top = slotTop + Math.random() * Math.max(0, slotHeight - popupHeight);
 
 		return {
 			windowData,
@@ -88,7 +123,7 @@ function createWindow({ windowData, piece, cellSize, width, height, left, top })
 	);
 
 	createdWindows.push({...windowData, popup, piece, cellSize, width, height, left, top});
-	windowRepulsion.addWindow(popup, windowData.id);
+	windowRepulsion.addWindow(popup, windowData.id, left, top);
 }
 
 function startGame() {
@@ -183,12 +218,16 @@ window.addEventListener("message", (event) => {
 
 	if (event.data.type === "ready") {
 		const currentWindow = createdWindows.find((item) => item.popup === event.source);
-		const { piece, start_x, start_y, cellSize, width, height } = currentWindow;
+		if (!currentWindow) return;
 
-		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, cellSize, width, height, player, won}, window.location.origin);
+		const { piece, start_x, start_y, cellSize, width, height, left, top } = currentWindow;
+
+		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, cellSize, width, height, left, top, player, won}, window.location.origin);
 	}
 
 	if (event.data.type === "move") {
+		if (!createdWindows.some((item) => item.popup === event.source)) return;
+
 		player.x = event.data.x;
 		player.y = event.data.y;
 		sendPlayer();

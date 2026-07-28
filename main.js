@@ -111,6 +111,8 @@ window.addEventListener("message", (event) => {
 		startX = data.start_x;
 		startY = data.start_y;
 		cellSize = data.cellSize;
+		window.setManagedPosition(data.left, data.top);
+		window.moveTo(data.left, data.top);
 		windowWidth = data.width + window.outerWidth - window.innerWidth;
 		windowHeight = data.height + window.outerHeight - window.innerHeight;
 		window.resizeTo(windowWidth, windowHeight);
