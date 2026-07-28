@@ -1,4 +1,4 @@
-const SPEED = 2;
+const SPEED = 1.5;
 const SIZE = 0.7;
 const FEET_OFFSET = SIZE / 2;
 const SOURCE = { x: 10, y: 15, width: 75, height: 170 };

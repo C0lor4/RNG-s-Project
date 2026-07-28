@@ -1,4 +1,4 @@
-import Player from "./Player.js";
+import Player from "./player.js";
 
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
@@ -54,6 +54,10 @@ window.opener.postMessage(
 	{ type: "ready" },
 	window.location.origin
 );
+
+window.setInterval(() => {
+	if (!window.opener || window.opener.closed) window.close();
+}, 250);
 
 requestAnimationFrame(render);
 

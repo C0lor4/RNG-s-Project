@@ -4,10 +4,14 @@ import WindowRepulsion, { findFreePosition } from "./WindowRepulsion.js";
 const CELL_SIZE = 100;
 const OVERLAP = 16;
 const player = { x: 1, y: 1 };
+const music = new Audio("./music.mp3");
 
 let createdWindows = [];
 let maze;
 const windowRepulsion = new WindowRepulsion(OVERLAP);
+
+music.loop = true;
+music.volume = 0.5;
 
 function getPiece(maze, windowData) {
 	return maze
@@ -55,6 +59,7 @@ function createWindow(windowData, piece) {
 }
 
 function startGame() {
+	playMusic();
 	windowRepulsion.reset();
 	createdWindows = [];
 	player.x = 1;
@@ -69,6 +74,20 @@ function startGame() {
 	}
 
 	createdWindows[0].popup.focus();
+}
+
+function playMusic() {
+	if (music.volume > 0) music.play().catch(() => {});
+}
+
+function changeVolume(event) {
+	music.volume = Number(event.target.value);
+
+	if (music.volume === 0) {
+		music.pause();
+	} else if (music.paused) {
+		playMusic();
+	}
 }
 
 function sendPlayer() {
@@ -126,5 +145,7 @@ window.addEventListener("message", (event) => {
 
 const startButton = document.querySelector("#start-button");
 const resetButton = document.querySelector("#reset-button");
+const volumeSlider = document.querySelector("#volume-slider");
 startButton.addEventListener("click", startGame);
 resetButton.addEventListener("click", resetGame);
+volumeSlider.addEventListener("input", changeVolume);
