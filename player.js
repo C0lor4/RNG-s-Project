@@ -29,7 +29,7 @@ class Player {
 		window.addEventListener("blur", () => this.keys.clear());
 	}
 
-	setPosition({ x, y }) {
+	setPosition({x, y}) {
 		this.x = x;
 		this.y = y;
 	}
@@ -38,14 +38,9 @@ class Player {
 		this.maze = maze;
 	}
 
-	isPath(x, y) {
-		const row = Math.floor(x + 0.5);
+	check(x, y) {
 		const column = Math.floor(y + 0.5);
-		return this.maze[row]?.[column] === 1;
-	}
-
-	canStand(x, y) {
-		return this.isPath(x, y) && this.isPath(x + FEET_OFFSET, y);
+		return (this.maze[Math.floor(x + 0.5)]?.[column] === 1 && this.maze[Math.floor(x + FEET_OFFSET + 0.5)]?.[column] === 1);
 	}
 
 	update(deltaTime) {
@@ -61,8 +56,8 @@ class Player {
 		const nextX = this.x + moveX * distance;
 		const nextY = this.y + moveY * distance;
 
-		if (this.canStand(nextX, this.y)) this.x = nextX;
-		if (this.canStand(this.x, nextY)) this.y = nextY;
+		if (this.check(nextX, this.y)) this.x = nextX;
+		if (this.check(this.x, nextY)) this.y = nextY;
 
 		if (this.x === oldX && this.y === oldY) return;
 

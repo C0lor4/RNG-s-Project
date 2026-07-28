@@ -1,3 +1,6 @@
+/*
+ * Based on the popup logic from https://github.com/charliegerard/flappy-windows and  
+ */
 import { initialize } from "./initialize.js";
 import WindowRepulsion, {
 	OVERLAP,

@@ -1,3 +1,7 @@
+/*
+* Modified the physics in https://github.com/BreadGhoti/Browser-Blocks by AI
+*/
+
 export const OVERLAP = 16;
 
 class WindowRepulsion {
