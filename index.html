@@ -55,6 +55,16 @@
 			color: #071018;
 		}
 
+		.difficulty-options {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+		}
+
+		.difficulty-options[hidden] {
+			display: none;
+		}
+
 		.volume-control {
 			display: grid;
 			grid-template-columns: 90px 1fr;
@@ -78,11 +88,16 @@
 	<h1 class="start-title">Sneaky Switch</h1>
 	<main class="start-options">
 		<button class="start-button" id="start-button" type="button">Start</button>
-		<button class="start-button" id="close-button" type="button">Close</button>
+		<button class="start-button" id="difficulty-button" type="button" aria-expanded="false">Difficulty</button>
+		<div class="difficulty-options" id="difficulty-options" hidden>
+			<button class="start-button" id="maze-size-button" type="button">25x17</button>
+			<button class="start-button" id="piece-count-button" type="button">16</button>
+		</div>
 		<label class="volume-control">
 			<span>Volume</span>
 			<input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.5">
 		</label>
+		<button class="start-button" id="close-button" type="button">Close</button>
 	</main>
 	<script type="module" src="Setup.js"></script>
 </body>

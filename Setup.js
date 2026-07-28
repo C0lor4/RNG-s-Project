@@ -7,11 +7,19 @@ import WindowRepulsion, { OVERLAP } from "./WindowRepulsion.js";
 const player = { x: 1, y: 1 };
 const music = new Audio("./music.mp3");
 const WIN_DISTANCE = 0.5;
+const mazeSizes = [
+	{ width: 25, height: 17 },
+	{ width: 33, height: 21 },
+	{ width: 41, height: 25 }
+];
+const pieceCounts = [16, 32];
 
 let createdWindows = [];
 let maze;
 let won = false;
 let winWindow;
+let mazeSizeIndex = 0;
+let pieceCountIndex = 0;
 const windowRepulsion = new WindowRepulsion(OVERLAP);
 
 music.loop = true;
@@ -22,7 +30,7 @@ function getPiece(maze, windowData) {
 }
 
 function createLayout(maze, windows) {
-	const columns = Math.ceil(Math.sqrt(windows.length * screen.availWidth / screen.availHeight));
+	const columns = Math.ceil(Math.sqrt(windows.length));
 	const rows = Math.ceil(windows.length / columns);
 	const slotWidth = screen.availWidth / columns;
 	const slotHeight = screen.availHeight / rows;
@@ -92,7 +100,12 @@ function startGame() {
 	player.y = 1;
 	won = false;
 
-	const [newMaze, ...windows] = initialize();
+	const { width, height } = mazeSizes[mazeSizeIndex];
+	const [newMaze, ...windows] = initialize(
+		width,
+		height,
+		pieceCounts[pieceCountIndex]
+	);
 	maze = newMaze;
 
 	for (const windowLayout of createLayout(maze, windows)) createWindow(windowLayout);
@@ -185,7 +198,27 @@ window.addEventListener("message", (event) => {
 
 const startButton = document.querySelector("#start-button");
 const closeButton = document.querySelector("#close-button");
+const difficultyButton = document.querySelector("#difficulty-button");
+const difficultyOptions = document.querySelector("#difficulty-options");
+const mazeSizeButton = document.querySelector("#maze-size-button");
+const pieceCountButton = document.querySelector("#piece-count-button");
 const volumeSlider = document.querySelector("#volume-slider");
 startButton.addEventListener("click", startGame);
 closeButton.addEventListener("click", closeGame);
 volumeSlider.addEventListener("input", changeVolume);
+
+difficultyButton.addEventListener("click", () => {
+	difficultyOptions.hidden = !difficultyOptions.hidden;
+	difficultyButton.setAttribute("aria-expanded", String(!difficultyOptions.hidden));
+});
+
+mazeSizeButton.addEventListener("click", () => {
+	mazeSizeIndex = (mazeSizeIndex + 1) % mazeSizes.length;
+	const { width, height } = mazeSizes[mazeSizeIndex];
+	mazeSizeButton.textContent = `${width}x${height}`;
+});
+
+pieceCountButton.addEventListener("click", () => {
+	pieceCountIndex = (pieceCountIndex + 1) % pieceCounts.length;
+	pieceCountButton.textContent = pieceCounts[pieceCountIndex];
+});

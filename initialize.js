@@ -33,11 +33,9 @@ function shuffle(arr) {
     return arr;
 }
 
-// 25x15, 33x19，17x11
-
-export function initialize() {
-    const width = 17;
-    const height = 11;
+export function initialize(width = 25, height = 17, pieceCount = 16) {
+    const pieceColumns = 4;
+    const pieceRows = pieceCount / pieceColumns;
     const grid = Array.from({ length: height }, () => Array(width).fill(0));
     const visited = Array.from({ length: height }, () => Array(width).fill(false));
 
@@ -67,14 +65,14 @@ export function initialize() {
 
     const pieces = [];
 
-    for (let pieceRow = 0; pieceRow < 4; pieceRow++) {
-        for (let pieceColumn = 0; pieceColumn < 4; pieceColumn++) {
+    for (let pieceRow = 0; pieceRow < pieceRows; pieceRow++) {
+        for (let pieceColumn = 0; pieceColumn < pieceColumns; pieceColumn++) {
             pieces.push({
                 id: pieces.length + 1,
-                start_x: Math.floor(pieceRow * height / 4),
-                start_y: Math.floor(pieceColumn * width / 4),
-                end_x: Math.floor((pieceRow + 1) * height / 4) - 1,
-                end_y: Math.floor((pieceColumn + 1) * width / 4) - 1
+                start_x: Math.floor(pieceRow * height / pieceRows),
+                start_y: Math.floor(pieceColumn * width / pieceColumns),
+                end_x: Math.floor((pieceRow + 1) * height / pieceRows) - 1,
+                end_y: Math.floor((pieceColumn + 1) * width / pieceColumns) - 1
             });
         }
     }
