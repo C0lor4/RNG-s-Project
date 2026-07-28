@@ -1,6 +1,7 @@
 const SPEED = 1.5;
 const SIZE = 0.7;
-const SOURCE = { x: 10, y: 15, width: 75, height: 170 };
+const ANIMATION_SPEED = 8;
+const IDLE_ANIMATION_DELAY = 5000;
 const MOVEMENT_KEYS = new Set(["w","a","s","d","arrowup","arrowleft","arrowdown","arrowright"]);
 
 class Player {
@@ -9,8 +10,13 @@ class Player {
 		this.y = 1;
 		this.maze = [];
 		this.keys = new Set();
+		this.frame = 0;
+		this.animationRow = 0;
+		this.animationTime = 0;
+		this.lastMovementTime = performance.now();
+		this.movedRemotely = false;
 		this.image = new Image();
-		this.image.src = "./Player.png";
+		this.image.src = "./Sprite.png";
 
 		window.addEventListener("keydown", (event) => {
 			const key = event.key.toLowerCase();
@@ -29,8 +35,17 @@ class Player {
 	}
 
 	setPosition({x, y}) {
+		const deltaX = x - this.x;
+		const deltaY = y - this.y;
+
 		this.x = x;
 		this.y = y;
+
+		if (deltaX || deltaY) {
+			this.setAnimationRow(deltaX, deltaY);
+			this.lastMovementTime = performance.now();
+			this.movedRemotely = true;
+		}
 	}
 
 	setMaze(maze) {
@@ -46,46 +61,86 @@ class Player {
 		const moveX = Number(this.keys.has("s") || this.keys.has("arrowdown")) - Number(this.keys.has("w") || this.keys.has("arrowup"));
 		const moveY = Number(this.keys.has("d") || this.keys.has("arrowright")) - Number(this.keys.has("a") || this.keys.has("arrowleft"));
 		const length = Math.hypot(moveX, moveY);
+		let moved = this.movedRemotely;
+		this.movedRemotely = false;
 
-		if (length === 0) return;
+		if (length) {
+			const distance = SPEED * deltaTime / length;
+			const oldX = this.x;
+			const oldY = this.y;
+			const nextX = this.x + moveX * distance;
+			const nextY = this.y + moveY * distance;
 
-		const distance = SPEED * deltaTime / length;
-		const oldX = this.x;
-		const oldY = this.y;
-		const nextX = this.x + moveX * distance;
-		const nextY = this.y + moveY * distance;
+			if (this.check(nextX, this.y)) this.x = nextX;
+			if (this.check(this.x, nextY)) this.y = nextY;
 
-		if (this.check(nextX, this.y)) this.x = nextX;
-		if (this.check(this.x, nextY)) this.y = nextY;
+			if (this.x !== oldX || this.y !== oldY) {
+				moved = true;
+				this.setAnimationRow(moveX, moveY);
+				this.lastMovementTime = performance.now();
 
-		if (this.x === oldX && this.y === oldY) return;
+				window.opener.postMessage(
+					{ type: "move", x: this.x, y: this.y },
+					window.location.origin
+				);
+			}
+		}
 
-		window.opener.postMessage(
-			{ type: "move", x: this.x, y: this.y },
-			window.location.origin
-		);
+		if (!moved) this.setAnimationRow(0, 0);
+
+		if (
+			!moved &&
+			performance.now() - this.lastMovementTime < IDLE_ANIMATION_DELAY
+		) {
+			this.animationTime = 0;
+			this.frame = 0;
+			return;
+		}
+
+		this.animationTime += deltaTime;
+		this.frame =
+			Math.floor(this.animationTime * ANIMATION_SPEED) % 4;
+	}
+
+	setAnimationRow(moveX, moveY) {
+		let row = 0;
+
+		if (moveY === 0 && moveX > 0) row = 1;
+		if (moveY === 0 && moveX < 0) row = 2;
+
+		if (row !== this.animationRow) {
+			this.animationRow = row;
+			this.animationTime = 0;
+			this.frame = 0;
+		}
 	}
 
 	draw(context, startX, startY, cellWidth, cellHeight) {
 		if (!this.image.complete) return;
 
-		const scale = Math.min(
-			cellWidth * SIZE / SOURCE.width,
-			cellHeight * SIZE / SOURCE.height
-		);
-		const width = SOURCE.width * scale;
-		const height = SOURCE.height * scale;
+		const size = Math.min(cellWidth, cellHeight) * SIZE;
 		const centerX = (this.y - startY + 0.5) * cellWidth;
 		const centerY = (this.x - startX + 0.5) * cellHeight;
 		const outsideWindow =
-			centerX + width / 2 <= 0 ||
-			centerX - width / 2 >= context.canvas.width ||
-			centerY + height / 2 <= 0 ||
-			centerY - height / 2 >= context.canvas.height;
+			centerX + size / 2 <= 0 ||
+			centerX - size / 2 >= context.canvas.width ||
+			centerY + size / 2 <= 0 ||
+			centerY - size / 2 >= context.canvas.height;
 
 		if (outsideWindow) return;
 
-		context.drawImage(this.image, SOURCE.x, SOURCE.y, SOURCE.width, SOURCE.height, centerX - width / 2, centerY - height / 2, width, height);
+		context.imageSmoothingEnabled = false;
+		context.drawImage(
+			this.image,
+			this.frame * 32,
+			this.animationRow * 32,
+			32,
+			32,
+			centerX - size / 2,
+			centerY - size / 2,
+			size,
+			size
+		);
 	}
 }
 

@@ -1,4 +1,4 @@
-import Player from "./player.js";
+import Player from "./Player.js";
 
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
