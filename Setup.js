@@ -1,8 +1,10 @@
 import { initialize } from "./initialize.js";
-import WindowRepulsion, { findFreePosition } from "./WindowRepulsion.js";
+import WindowRepulsion, {
+	OVERLAP,
+	findFreePosition
+} from "./WindowRepulsion.js";
 
 const CELL_SIZE = 100;
-const OVERLAP = 16;
 const player = { x: 1, y: 1 };
 const music = new Audio("./music.mp3");
 

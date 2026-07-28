@@ -1,10 +1,10 @@
-const DEFAULT_ALLOWED_OVERLAP = 16;
+export const OVERLAP = 16;
 const CORNER_DIFFERENCE = 16;
 const RELEASE_DELAY = 140;
 const UPDATE_INTERVAL = 20;
 
 class WindowRepulsion {
-	constructor(allowedOverlap = DEFAULT_ALLOWED_OVERLAP) {
+	constructor(allowedOverlap = OVERLAP) {
 		this.allowedOverlap = allowedOverlap;
 		this.windows = [];
 		window.setInterval(() => this.update(), UPDATE_INTERVAL);
@@ -190,7 +190,7 @@ function findFreePosition(
 	width,
 	height,
 	windows,
-	allowedOverlap = DEFAULT_ALLOWED_OVERLAP,
+	allowedOverlap = OVERLAP,
 	ignoredWindow
 ) {
 	const bounds = getAvailableScreenBounds();
