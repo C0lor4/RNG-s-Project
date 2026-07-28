@@ -41,6 +41,19 @@ class WindowRepulsion {
 		this.windows = [];
 	}
 
+	syncWindow(popup, { left, top, width, height }) {
+		const item = this.windows.find((windowItem) => windowItem.popup === popup);
+		if (!item) return;
+
+		item.left = left;
+		item.top = top;
+		item.width = width;
+		item.height = height;
+		item.deltaX = 0;
+		item.deltaY = 0;
+		item.movingByCode = false;
+	}
+
 	update() {
 		this.windows = this.windows.filter((item) => !item.popup.closed);
 

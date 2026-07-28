@@ -110,17 +110,17 @@ class Player {
 		}
 	}
 
-	draw(context, startX, startY, cellWidth, cellHeight) {
+	draw(context, startX, startY, cellSize, rows, columns) {
 		if (!this.image.complete) return;
 
-		const size = Math.min(cellWidth, cellHeight) * SIZE;
-		const centerX = (this.y - startY + 0.5) * cellWidth;
-		const centerY = (this.x - startX + 0.5) * cellHeight;
+		const size = cellSize * SIZE;
+		const centerX = (this.y - startY + 0.5) * cellSize;
+		const centerY = (this.x - startX + 0.5) * cellSize;
 		const outsideWindow =
 			centerX + size / 2 <= 0 ||
-			centerX - size / 2 >= context.canvas.width ||
+			centerX - size / 2 >= columns * cellSize ||
 			centerY + size / 2 <= 0 ||
-			centerY - size / 2 >= context.canvas.height;
+			centerY - size / 2 >= rows * cellSize;
 
 		if (outsideWindow) return;
 
