@@ -19,22 +19,13 @@ music.loop = true;
 music.volume = 0.5;
 
 function getPiece(maze, windowData) {
-	return maze
-		.slice(windowData.start_x, windowData.end_x + 1)
-		.map((row) =>
-			row.slice(windowData.start_y, windowData.end_y + 1)
-		);
+	return maze.slice(windowData.start_x, windowData.end_x + 1).map((row) => row.slice(windowData.start_y, windowData.end_y + 1));
 }
 
 function createWindow(windowData, piece) {
 	const width = piece[0].length * CELL_SIZE;
 	const height = piece.length * CELL_SIZE;
-	const { left, top } = findFreePosition(
-		width,
-		height,
-		createdWindows,
-		OVERLAP
-	);
+	const {left, top } = findFreePosition(width, height, createdWindows, OVERLAP);
 	const gameUrl = new URL("./game.html", window.location.href);
 
 	const features = [
@@ -50,16 +41,7 @@ function createWindow(windowData, piece) {
 		features
 	);
 
-	createdWindows.push({
-		...windowData,
-		popup,
-		piece,
-		width,
-		height,
-		left,
-		top
-	});
-
+	createdWindows.push({...windowData, popup, piece, width, height, left, top});
 	windowRepulsion.addWindow(popup, windowData.id);
 }
 
@@ -97,8 +79,8 @@ function changeVolume(event) {
 
 function sendPlayer() {
 	for (const item of createdWindows) {
-		item.popup.postMessage(
-			{ type: "player", player },
+		item.popup.postMessage({
+			type: "player", player},
 			window.location.origin
 		);
 	}
@@ -121,24 +103,10 @@ function resetGame() {
 
 window.addEventListener("message", (event) => {
 	if (event.data.type === "ready") {
-		const currentWindow = createdWindows.find(
-			(item) => item.popup === event.source
-		);
+		const currentWindow = createdWindows.find((item) => item.popup === event.source);
 		const { piece, start_x, start_y, width, height } = currentWindow;
 
-		event.source.postMessage(
-			{
-				type: "initialize",
-				maze,
-				piece,
-				start_x,
-				start_y,
-				width,
-				height,
-				player
-			},
-			window.location.origin
-		);
+		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, width, height, player}, window.location.origin);
 	}
 
 	if (event.data.type === "move") {

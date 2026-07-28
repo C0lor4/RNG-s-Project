@@ -79,34 +79,29 @@ class Player {
 				this.setAnimationRow(moveX, moveY);
 				this.lastMovementTime = performance.now();
 
-				window.opener.postMessage(
-					{ type: "move", x: this.x, y: this.y },
-					window.location.origin
-				);
+				window.opener.postMessage({ type: "move", x: this.x, y: this.y }, window.location.origin);
 			}
 		}
 
 		if (!moved) this.setAnimationRow(0, 0);
 
-		if (
-			!moved &&
-			performance.now() - this.lastMovementTime < IDLE_ANIMATION_DELAY
-		) {
+		if (!moved && performance.now() - this.lastMovementTime < IDLE_ANIMATION_DELAY) {
 			this.animationTime = 0;
 			this.frame = 0;
 			return;
 		}
 
 		this.animationTime += deltaTime;
-		this.frame =
-			Math.floor(this.animationTime * ANIMATION_SPEED) % 4;
+		this.frame = Math.floor(this.animationTime * ANIMATION_SPEED) % 4;
 	}
 
 	setAnimationRow(moveX, moveY) {
 		let row = 0;
 
-		if (moveY === 0 && moveX > 0) row = 1;
-		if (moveY === 0 && moveX < 0) row = 2;
+		if (moveX > 0) row = 1;
+		else if (moveX < 0) row = 2;
+		else if (moveY > 0) row = 3;
+		else if (moveY < 0) row = 4;
 
 		if (row !== this.animationRow) {
 			this.animationRow = row;
@@ -130,17 +125,7 @@ class Player {
 		if (outsideWindow) return;
 
 		context.imageSmoothingEnabled = false;
-		context.drawImage(
-			this.image,
-			this.frame * 32,
-			this.animationRow * 32,
-			32,
-			32,
-			centerX - size / 2,
-			centerY - size / 2,
-			size,
-			size
-		);
+		context.drawImage(this.image, this.frame * 32, this.animationRow * 32, 32, 32, centerX - size / 2, centerY - size / 2, size, size);
 	}
 }
 
