@@ -33,7 +33,7 @@ function shuffle(arr) {
     return arr;
 }
 
-// 25x15, 33x19
+// 25x15, 33x19，17x11
 
 export function initialize() {
     const width = 17;

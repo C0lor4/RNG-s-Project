@@ -5,6 +5,9 @@ const context = canvas.getContext("2d");
 const playerCanvas = document.createElement("canvas");
 const playerContext = playerCanvas.getContext("2d");
 const player = new Player();
+const diamond = new Image();
+diamond.src = "./diamond.png";
+diamond.addEventListener("load", drawPiece);
 
 let piece;
 let maze;
@@ -19,6 +22,7 @@ let windowY = window.screenY;
 let managedPosition;
 let restoringSize = false;
 let drag;
+let diamondVisible = true;
 
 document.body.append(canvas, playerCanvas);
 resizeCanvas();
@@ -112,12 +116,18 @@ window.addEventListener("message", (event) => {
 		window.resizeTo(windowWidth, windowHeight);
 		player.setMaze(data.maze);
 		player.setPosition(data.player);
+		diamondVisible = !data.won;
 		resizeCanvas();
 		drawPiece();
 	}
 
 	if (data.type === "player") {
 		player.setPosition(data.player);
+	}
+
+	if (data.type === "win") {
+		diamondVisible = false;
+		drawPiece();
 	}
 });
 
@@ -207,6 +217,34 @@ function drawPiece() {
 	}
 
 	context.stroke();
+
+	const goalX = maze.length - 2;
+	const goalY = maze[0].length - 2;
+	const localX = goalX - startX;
+	const localY = goalY - startY;
+
+	if (
+		diamondVisible &&
+		diamond.complete &&
+		diamond.naturalWidth &&
+		localX >= 0 &&
+		localX < rows &&
+		localY >= 0 &&
+		localY < columns
+	) {
+		const size = cellSize * 0.7;
+		const centerX = (localY + 0.5) * cellSize;
+		const centerY = (localX + 0.5) * cellSize;
+
+		context.imageSmoothingEnabled = false;
+		context.drawImage(
+			diamond,
+			centerX - size / 2,
+			centerY - size / 2,
+			size,
+			size
+		);
+	}
 }
 
 function render(currentTime) {

@@ -1,4 +1,4 @@
-const SPEED = 1.5;
+const SPEED = 2;
 const SIZE = 0.7;
 const ANIMATION_SPEED = 8;
 const IDLE_ANIMATION_DELAY = 5000;

@@ -6,9 +6,12 @@ import WindowRepulsion, { OVERLAP } from "./WindowRepulsion.js";
 
 const player = { x: 1, y: 1 };
 const music = new Audio("./music.mp3");
+const WIN_DISTANCE = 0.5;
 
 let createdWindows = [];
 let maze;
+let won = false;
+let winWindow;
 const windowRepulsion = new WindowRepulsion(OVERLAP);
 
 music.loop = true;
@@ -82,10 +85,12 @@ function createWindow({ windowData, piece, cellSize, width, height, left, top })
 
 function startGame() {
 	playMusic();
+	closeWinWindow();
 	windowRepulsion.reset();
 	createdWindows = [];
 	player.x = 1;
 	player.y = 1;
+	won = false;
 
 	const [newMaze, ...windows] = initialize();
 	maze = newMaze;
@@ -121,6 +126,41 @@ function sendPlayer() {
 function closeGame() {
 	windowRepulsion.reset();
 	createdWindows = [];
+	closeWinWindow();
+}
+
+function checkWin() {
+	const goalX = maze.length - 2;
+	const goalY = maze[0].length - 2;
+
+	if (
+		!won &&
+		Math.hypot(player.x - goalX, player.y - goalY) <= WIN_DISTANCE
+	) {
+		won = true;
+
+		for (const item of createdWindows) {
+			item.popup.postMessage({ type: "win" }, window.location.origin);
+		}
+
+		const width = 500;
+		const height = 250;
+		const left = (screen.availLeft || 0) + (screen.availWidth - width) / 2;
+		const top = (screen.availTop || 0) + (screen.availHeight - height) / 2;
+		const winUrl = new URL("./win.html", window.location.href);
+
+		winWindow = window.open(
+			winUrl.href,
+			"win-window",
+			`popup=yes,width=${width},height=${height},left=${left},top=${top}`
+		);
+		winWindow?.focus();
+	}
+}
+
+function closeWinWindow() {
+	if (winWindow && !winWindow.closed) winWindow.close();
+	winWindow = undefined;
 }
 
 window.addEventListener("message", (event) => {
@@ -132,13 +172,14 @@ window.addEventListener("message", (event) => {
 		const currentWindow = createdWindows.find((item) => item.popup === event.source);
 		const { piece, start_x, start_y, cellSize, width, height } = currentWindow;
 
-		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, cellSize, width, height, player}, window.location.origin);
+		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, cellSize, width, height, player, won}, window.location.origin);
 	}
 
 	if (event.data.type === "move") {
 		player.x = event.data.x;
 		player.y = event.data.y;
 		sendPlayer();
+		checkWin();
 	}
 });
 

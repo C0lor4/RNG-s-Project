@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>You Win</title>
+	<style>
+		* {
+			box-sizing: border-box;
+			margin: 0;
+		}
+
+		body {
+			display: grid;
+			width: 100vw;
+			height: 100vh;
+			place-items: center;
+			overflow: hidden;
+			background: #080b12;
+			color: #ffffff;
+			font-family: Arial, sans-serif;
+		}
+
+		h1 {
+			font-size: clamp(48px, 15vw, 96px);
+		}
+	</style>
+</head>
+<body>
+	<h1>You Win</h1>
+	<script>
+		setInterval(() => {
+			if (!window.opener || window.opener.closed) window.close();
+		}, 250);
+	</script>
+</body>
+</html>
