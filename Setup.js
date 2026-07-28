@@ -26,6 +26,7 @@ function createWindow(windowData, piece) {
 		createdWindows,
 		OVERLAP
 	);
+	const gameUrl = new URL("./game.html", window.location.href);
 
 	const features = [
 		"popup=yes",
@@ -35,7 +36,7 @@ function createWindow(windowData, piece) {
 		`top=${top}`
 	].join(",");
 	const popup = window.open(
-		"./game.html",
+		gameUrl.href,
 		`${windowData.id}-${Date.now()}`,
 		features
 	);
@@ -99,7 +100,7 @@ window.addEventListener("message", (event) => {
 		const currentWindow = createdWindows.find(
 			(item) => item.popup === event.source
 		);
-		const { piece, start_x, start_y } = currentWindow;
+		const { piece, start_x, start_y, width, height } = currentWindow;
 
 		event.source.postMessage(
 			{
@@ -108,6 +109,8 @@ window.addEventListener("message", (event) => {
 				piece,
 				start_x,
 				start_y,
+				width,
+				height,
 				player
 			},
 			window.location.origin

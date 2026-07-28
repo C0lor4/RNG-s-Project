@@ -4,8 +4,6 @@ const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
 const playerCanvas = document.createElement("canvas");
 const playerContext = playerCanvas.getContext("2d");
-const windowWidth = window.outerWidth;
-const windowHeight = window.outerHeight;
 const player = new Player();
 
 let piece;
@@ -13,6 +11,8 @@ let startX;
 let startY;
 let cellWidth;
 let cellHeight;
+let windowWidth;
+let windowHeight;
 let lastFrameTime = performance.now();
 let windowX = window.screenX;
 let windowY = window.screenY;
@@ -21,6 +21,8 @@ document.body.append(canvas, playerCanvas);
 resizeCanvas();
 
 window.addEventListener("resize", () => {
+	if (!windowWidth) return;
+
 	window.moveTo(windowX, windowY);
 	window.resizeTo(windowWidth, windowHeight);
 	resizeCanvas();
@@ -34,8 +36,12 @@ window.addEventListener("message", (event) => {
 		piece = data.piece;
 		startX = data.start_x;
 		startY = data.start_y;
+		windowWidth = data.width + window.outerWidth - window.innerWidth;
+		windowHeight = data.height + window.outerHeight - window.innerHeight;
+		window.resizeTo(windowWidth, windowHeight);
 		player.setMaze(data.maze);
 		player.setPosition(data.player);
+		resizeCanvas();
 		drawPiece();
 	}
 

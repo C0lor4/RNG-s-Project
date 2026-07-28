@@ -150,7 +150,7 @@ class WindowRepulsion {
 	}
 
 	teleportWindow(pushed, currentTime) {
-		const { left, top } = findFreePosition(
+		const position = findFreePosition(
 			pushed.width,
 			pushed.height,
 			this.windows,
@@ -158,7 +158,14 @@ class WindowRepulsion {
 			pushed
 		);
 
-		this.moveWindow(pushed, left, top, currentTime);
+		if (!position) return;
+
+		this.moveWindow(
+			pushed,
+			position.left,
+			position.top,
+			currentTime
+		);
 	}
 
 	moveWindow(pushed, left, top, currentTime) {
@@ -212,7 +219,6 @@ function findFreePosition(
 		}
 	}
 
-	return { left: bounds.left, top: bounds.top };
 }
 
 function randomInteger(minimum, maximum) {
