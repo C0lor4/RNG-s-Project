@@ -1,6 +1,5 @@
 const SPEED = 1.5;
 const SIZE = 0.7;
-const FEET_OFFSET = SIZE / 2;
 const SOURCE = { x: 10, y: 15, width: 75, height: 170 };
 const MOVEMENT_KEYS = new Set(["w","a","s","d","arrowup","arrowleft","arrowdown","arrowright"]);
 
@@ -40,7 +39,7 @@ class Player {
 
 	check(x, y) {
 		const column = Math.floor(y + 0.5);
-		return (this.maze[Math.floor(x + 0.5)]?.[column] === 1 && this.maze[Math.floor(x + FEET_OFFSET + 0.5)]?.[column] === 1);
+		return (this.maze[Math.floor(x + 0.5)]?.[column] === 1 && this.maze[Math.floor(x + SIZE / 2 + 0.5)]?.[column] === 1);
 	}
 
 	update(deltaTime) {
@@ -86,17 +85,7 @@ class Player {
 
 		if (outsideWindow) return;
 
-		context.drawImage(
-			this.image,
-			SOURCE.x,
-			SOURCE.y,
-			SOURCE.width,
-			SOURCE.height,
-			centerX - width / 2,
-			centerY - height / 2,
-			width,
-			height
-		);
+		context.drawImage(this.image, SOURCE.x, SOURCE.y, SOURCE.width, SOURCE.height, centerX - width / 2, centerY - height / 2, width, height);
 	}
 }
 
