@@ -92,7 +92,7 @@ class Player {
 		}
 
 		this.animationTime += deltaTime;
-		this.frame = Math.floor(this.animationTime * ANIMATION_SPEED) % 4;
+		this.frame = Math.floor(this.animationTime * ANIMATION_SPEED) % 5;
 	}
 
 	setAnimationRow(moveX, moveY) {
