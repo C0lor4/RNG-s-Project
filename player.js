@@ -2,7 +2,7 @@ const SPEED = 1.5;
 const SIZE = 0.7;
 const FEET_OFFSET = SIZE / 2;
 const SOURCE = { x: 10, y: 15, width: 75, height: 170 };
-const HITBOX = { width: 0.4, height: 0.8 };
+const MOVEMENT_KEYS = new Set(["w","a","s","d","arrowup","arrowleft","arrowdown","arrowright"]);
 
 class Player {
 	constructor() {
@@ -15,7 +15,11 @@ class Player {
 
 		window.addEventListener("keydown", (event) => {
 			const key = event.key.toLowerCase();
-			if ("wasd".includes(key)) this.keys.add(key);
+
+			if (MOVEMENT_KEYS.has(key)) {
+				event.preventDefault();
+				this.keys.add(key);
+			}
 		});
 
 		window.addEventListener("keyup", (event) => {
@@ -45,8 +49,8 @@ class Player {
 	}
 
 	update(deltaTime) {
-		const moveX = Number(this.keys.has("s")) - Number(this.keys.has("w"));
-		const moveY = Number(this.keys.has("d")) - Number(this.keys.has("a"));
+		const moveX = Number(this.keys.has("s") || this.keys.has("arrowdown")) - Number(this.keys.has("w") || this.keys.has("arrowup"));
+		const moveY = Number(this.keys.has("d") || this.keys.has("arrowright")) - Number(this.keys.has("a") || this.keys.has("arrowleft"));
 		const length = Math.hypot(moveX, moveY);
 
 		if (length === 0) return;
@@ -79,13 +83,11 @@ class Player {
 		const height = SOURCE.height * scale;
 		const centerX = (this.y - startY + 0.5) * cellWidth;
 		const centerY = (this.x - startX + 0.5) * cellHeight;
-		const halfHitboxWidth = width * HITBOX.width / 2;
-		const halfHitboxHeight = height * HITBOX.height / 2;
 		const outsideWindow =
-			centerX + halfHitboxWidth <= 0 ||
-			centerX - halfHitboxWidth >= context.canvas.width ||
-			centerY + halfHitboxHeight <= 0 ||
-			centerY - halfHitboxHeight >= context.canvas.height;
+			centerX + width / 2 <= 0 ||
+			centerX - width / 2 >= context.canvas.width ||
+			centerY + height / 2 <= 0 ||
+			centerY - height / 2 >= context.canvas.height;
 
 		if (outsideWindow) return;
 
