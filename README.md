@@ -3,7 +3,7 @@
 
 [Play the demo](https://c0lor4.github.io/SneakySwitch/)
 
-![](https://imgur.com/a/JXULAjo)
+![](http://i.imgur.com/a/JXULAjo)
 
 
 ## Game requirements
@@ -11,9 +11,9 @@ Some browsers may block background music because they do not support the audio e
 
 If the device's screen is too small, the pop-up windows may experience errors.
 The game requires pop-ups to be enabled.
-**For [Chrome](chrome://settings/content/popups), Add "c0lor4.github.io" to "Allowed to send pop-ups and use redirects" **
-**For [Edge](edge://settings/privacy/sitePermissions/allSites/siteDetails?site=https://c0lor4.github.io/), click allow Pop-ups and redirects **
-**For [Firefox](about:preferences#permissionsData), Add "c0lor4.github.io" to "Manage Exceptions" **
+**For Chrome, open ```chrome://settings/content/popups```, Add "c0lor4.github.io" to "Allowed to send pop-ups and use redirects"**
+**For Edge, open ```edge://settings/privacy/sitePermissions/allSites/siteDetails?site=https://c0lor4.github.io/```, click allow Pop-ups and redirects**
+**For Firefox, open ```about:preferences#permissionsData```, Add "c0lor4.github.io" to "Manage Exceptions"**
 
 ## Run Locally
 
