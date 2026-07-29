@@ -19,6 +19,8 @@ let winWindow;
 let settingsWindow;
 let keyPosition;
 let hasKey = false;
+let diamondPosition;
+let diamondCollected = false;
 let chestOpenedAt = 0;
 let winTimer;
 let playerSpeed = 5;
@@ -107,15 +109,13 @@ function createWindow({windowData, piece, cellSize, width, height, left, top}) {
 	windowRepulsion.addWindow(popup, windowData.id, left, top);
 }
 
-// 随机放置钥匙
-function placeKey(maze) {
+// 随机放置物品
+function placeItem(maze, excludedPositions) {
 	const paths = [];
-	const goalX = maze.length - 2;
-	const goalY = maze[0].length - 2;
 
 	for (let x = 0; x < maze.length; x += 1) {
 		for (let y = 0; y < maze[x].length; y += 1) {
-			if (maze[x][y] === 1 && (x !== 1 || y !== 1) && (x !== goalX || y !== goalY)) {
+			if (maze[x][y] === 1 && !excludedPositions.some((position) => position.x === x && position.y === y)) {
 				paths.push({x, y});
 			}
 		}
@@ -131,12 +131,18 @@ function startGame() {
 	player.y = 1;
 	won = false;
 	hasKey = false;
+	diamondCollected = false;
 	chestOpenedAt = 0;
 
 	const {width, height} = mazeSizes[mazeSizeIndex];
 	const [newMaze, ...windows] = initialize(width, height, pieceCounts[pieceCountIndex]);
 	maze = newMaze; // 更新全局 maze
-	keyPosition = placeKey(maze);
+	const unavailable = [
+		{x: 1, y: 1},
+		{x: maze.length - 2, y: maze[0].length - 2}
+	];
+	keyPosition = placeItem(maze, unavailable);
+	diamondPosition = placeItem(maze, [...unavailable, keyPosition]);
 	shufflePieces(windows);
 
 	for (const windowLayout of createLayout(maze, windows)) createWindow(windowLayout);
@@ -247,6 +253,16 @@ function checkKey() {
 	}
 }
 
+function checkDiamond() {
+	if (!diamondCollected && Math.hypot(player.x - diamondPosition.x, player.y - diamondPosition.y) <= 0.5) {
+		diamondCollected = true;
+
+		for (const item of createdWindows) {
+			item.popup.postMessage({type: "diamond-collected"}, window.location.origin);
+		}
+	}
+}
+
 function checkWin() {
 	const goalX = maze.length - 2;
 	const goalY = maze[0].length - 2;
@@ -347,6 +363,8 @@ window.addEventListener("message", (event) => {
 			won,
 			keyPosition,
 			hasKey,
+			diamondPosition,
+			diamondCollected,
 			chestOpenedAt,
 			speed: playerSpeed,
 			...getColors()
@@ -360,6 +378,7 @@ window.addEventListener("message", (event) => {
 		player.y = event.data.y;
 		sendPlayer();
 		checkKey();
+		checkDiamond();
 		checkWin();
 	}
 });

@@ -12,12 +12,15 @@ const player = new Player();
 const chest = new Image();
 const openChest = new Image();
 const keyImage = new Image();
+const diamond = new Image();
 chest.src = "./assets/Chest.png";
 openChest.src = "./assets/Open Chest.png";
 keyImage.src = "./assets/Key.png";
+diamond.src = "./assets/diamond.png";
 chest.addEventListener("load", drawPiece);
 openChest.addEventListener("load", drawPiece);
 keyImage.addEventListener("load", drawPiece);
+diamond.addEventListener("load", drawPiece);
 
 let piece;
 let maze;
@@ -34,6 +37,8 @@ let restoringSize = false;
 let drag;
 let keyPosition;
 let hasKey = false;
+let diamondPosition;
+let diamondCollected = false;
 let chestOpenedAt = 0;
 let won = false;
 let nextSizeRetry = 0;
@@ -143,6 +148,8 @@ window.addEventListener("message", (event) => {
 		blockColor = data.blockColor;
 		keyPosition = data.keyPosition;
 		hasKey = data.hasKey;
+		diamondPosition = data.diamondPosition;
+		diamondCollected = data.diamondCollected;
 		chestOpenedAt = data.chestOpenedAt;
 		won = data.won;
 		resizeCanvas();
@@ -155,6 +162,11 @@ window.addEventListener("message", (event) => {
 
 	if (data.type === "key-collected") {
 		hasKey = true;
+		drawPiece();
+	}
+
+	if (data.type === "diamond-collected") {
+		diamondCollected = true;
 		drawPiece();
 	}
 
@@ -277,6 +289,7 @@ function drawPiece() {
 	context.stroke();
 
 	if (!hasKey) drawItem(keyImage, keyPosition, 0.65);
+	if (!diamondCollected) drawItem(diamond, diamondPosition, 0.7);
 	drawChest({x: maze.length - 2, y: maze[0].length - 2});
 }
 

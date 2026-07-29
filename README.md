@@ -56,6 +56,7 @@ Do not open `index.html` directly as a local file. The game uses JavaScript modu
 ## How to play
 - Use WASD or arrows to move
 - Find and collect the key first, then reach the chest to open it and win.
+- The randomly placed diamond is an optional bonus.
 - Press **Start** to play
 - Select a maze size and piece count from the **Difficulty** menu.
 
