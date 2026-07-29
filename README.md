@@ -1,7 +1,15 @@
 # Sneaky Switch
 **Sneaky Switch** is a browser-based maze game in which you guide a stickman to a diamond. The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or taste your luck. Different maze sizes and piece counts provide multiple difficulty combinations.
 
-## **[Play the demo](https://c0lor4.github.io/SneakySwitch/)**
+<div id="toc">
+  <ul align="center" style="list-style: none">
+    <summary>
+      <h1>
+        <a href="https://c0lor4.github.io/SneakySwitch/">Play the demo</a>
+      </h1>
+    </summary>
+  </ul>
+</div>
 
 ![](https://i.imgur.com/TIKA1Gp.png)
 
