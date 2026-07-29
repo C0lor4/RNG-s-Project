@@ -3,7 +3,7 @@
 
 [Play the demo](https://c0lor4.github.io/SneakySwitch/)
 
-![](http://i.imgur.com/a/JXULAjo)
+![](https://i.imgur.com/TIKA1Gp.png)
 
 
 ## Game requirements
