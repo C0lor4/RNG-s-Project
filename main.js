@@ -1,14 +1,23 @@
 import Player from "./player.js";
 
 const SIZE_RETRY_INTERVAL = 100;
+const CHEST_FRAME_COUNT = 8;
+const CHEST_FRAME_SIZE = 150;
+const CHEST_FRAME_TIME = 125;
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
 const playerCanvas = document.createElement("canvas");
 const playerContext = playerCanvas.getContext("2d");
 const player = new Player();
-const diamond = new Image();
-diamond.src = "./diamond.png";
-diamond.addEventListener("load", drawPiece);
+const chest = new Image();
+const openChest = new Image();
+const keyImage = new Image();
+chest.src = "./assets/Chest.png";
+openChest.src = "./assets/Open Chest.png";
+keyImage.src = "./assets/Key.png";
+chest.addEventListener("load", drawPiece);
+openChest.addEventListener("load", drawPiece);
+keyImage.addEventListener("load", drawPiece);
 
 let piece;
 let maze;
@@ -23,7 +32,10 @@ let windowY = window.screenY;
 let managedPosition;
 let restoringSize = false;
 let drag;
-let diamondVisible = true;
+let keyPosition;
+let hasKey = false;
+let chestOpenedAt = 0;
+let won = false;
 let nextSizeRetry = 0;
 let blockColor = "#ff0000";
 
@@ -127,8 +139,12 @@ window.addEventListener("message", (event) => {
 		player.setMaze(data.maze);
 		player.setPosition(data.player);
 		player.setColor(data.playerColor);
+		player.setSpeed(data.speed);
 		blockColor = data.blockColor;
-		diamondVisible = !data.won;
+		keyPosition = data.keyPosition;
+		hasKey = data.hasKey;
+		chestOpenedAt = data.chestOpenedAt;
+		won = data.won;
 		resizeCanvas();
 		drawPiece();
 	}
@@ -137,8 +153,18 @@ window.addEventListener("message", (event) => {
 		player.setPosition(data.player);
 	}
 
+	if (data.type === "key-collected") {
+		hasKey = true;
+		drawPiece();
+	}
+
+	if (data.type === "open-chest") {
+		chestOpenedAt = data.startedAt;
+		drawPiece();
+	}
+
 	if (data.type === "win") {
-		diamondVisible = false;
+		won = true;
 		drawPiece();
 	}
 
@@ -146,6 +172,10 @@ window.addEventListener("message", (event) => {
 		blockColor = data.blockColor;
 		player.setColor(data.playerColor);
 		drawPiece();
+	}
+
+	if (data.type === "speed") {
+		player.setSpeed(data.speed);
 	}
 });
 
@@ -246,19 +276,50 @@ function drawPiece() {
 
 	context.stroke();
 
-	const goalX = maze.length - 2;
-	const goalY = maze[0].length - 2;
-	const localX = goalX - startX;
-	const localY = goalY - startY;
+	if (!hasKey) drawItem(keyImage, keyPosition, 0.65);
+	drawChest({x: maze.length - 2, y: maze[0].length - 2});
+}
 
-	if (diamondVisible && diamond.complete && diamond.naturalWidth && localX >= 0 && localX < rows && localY >= 0 && localY < columns) {
-		const size = cellSize * 0.7;
-		const centerX = (localY + 0.5) * cellSize;
-		const centerY = (localX + 0.5) * cellSize;
-
-		context.imageSmoothingEnabled = false;
-		context.drawImage(diamond, centerX - size / 2, centerY - size / 2, size, size);
+// 箱子打开动画
+function drawChest(position) {
+	if (!chestOpenedAt || !openChest.complete || !openChest.naturalWidth) {
+		drawItem(chest, position, 0.8);
+		return;
 	}
+
+	const frame = Math.min(Math.floor((Date.now() - chestOpenedAt) / CHEST_FRAME_TIME), CHEST_FRAME_COUNT - 1);
+	drawItem(openChest, position, 0.6, {
+		x: frame * CHEST_FRAME_SIZE,
+		y: 0,
+		width: CHEST_FRAME_SIZE,
+		height: CHEST_FRAME_SIZE
+	});
+}
+
+function drawItem(image, position, maximumSize, source) {
+	if (!position || !image.complete || !image.naturalWidth) return;
+
+	const localX = position.x - startX;
+	const localY = position.y - startY;
+	const rows = piece.length;
+	const columns = piece[0].length;
+
+	if (localX < 0 || localX >= rows || localY < 0 || localY >= columns) return;
+
+	source ??= {
+		x: 0,
+		y: 0,
+		width: image.naturalWidth,
+		height: image.naturalHeight
+	};
+	const scale = Math.min(cellSize * maximumSize / source.width, cellSize * maximumSize / source.height);
+	const width = source.width * scale;
+	const height = source.height * scale;
+	const centerX = (localY + 0.5) * cellSize;
+	const centerY = (localX + 0.5) * cellSize;
+
+	context.imageSmoothingEnabled = false;
+	context.drawImage(image, source.x, source.y, source.width, source.height, centerX - width / 2, centerY - height / 2, width, height);
 }
 
 function render(currentTime) {
@@ -266,39 +327,25 @@ function render(currentTime) {
 	lastFrameTime = currentTime;
 	moveDraggedWindow();
 
-	if (
-		windowWidth &&
-		!restoringSize &&
-		currentTime >= nextSizeRetry &&
-		(
-			Math.abs(window.outerWidth - windowWidth) > 1 ||
-			Math.abs(window.outerHeight - windowHeight) > 1
-		)
-	) {
+	if (windowWidth && !restoringSize && currentTime >= nextSizeRetry && (Math.abs(window.outerWidth - windowWidth) > 1 || Math.abs(window.outerHeight - windowHeight) > 1)) {
 		nextSizeRetry = currentTime + SIZE_RETRY_INTERVAL;
 		window.resizeTo(windowWidth, windowHeight);
 	}
 
-	if (
-		managedPosition &&
-		Math.hypot(
-			window.screenX - managedPosition.left,
-			window.screenY - managedPosition.top
-		) <= 1
-	) {
+	if (managedPosition && Math.hypot(window.screenX - managedPosition.left, window.screenY - managedPosition.top) <= 1) {
 		windowX = window.screenX;
 		windowY = window.screenY;
 		managedPosition = undefined;
-	} else if (
-		!managedPosition &&
-		window.outerWidth === windowWidth &&
-		window.outerHeight === windowHeight
-	) {
+	} else if (!managedPosition && window.outerWidth === windowWidth &&window.outerHeight === windowHeight) {
 		windowX = window.screenX;
 		windowY = window.screenY;
 	}
 
 	player.update(deltaTime);
+
+	if (chestOpenedAt && !won && maze.length - 2 >= startX && maze.length - 2 < startX + piece.length && maze[0].length - 2 >= startY && maze[0].length - 2 < startY + piece[0].length) {
+		drawPiece();
+	}
 
 	if (!drag) {
 		playerContext.clearRect(

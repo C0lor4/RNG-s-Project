@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Settings</title>
-	<link rel="icon" type="image/png" href="./Icon.png">
+	<link rel="icon" type="image/png" href="./assets/Icon.png">
 	<style>
 		* {
 			box-sizing: border-box;
@@ -107,6 +107,12 @@
 			background: transparent;
 			color: #fff;
 		}
+
+		.setting-buttons {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+		}
 	</style>
 </head>
 <body>
@@ -124,22 +130,28 @@
 			<span>Player Color</span>
 			<input class="color-slider" id="player-color" type="range" min="0" max="420" value="0">
 		</label>
-		<button id="repulsion-button" type="button" aria-pressed="true">Enable Window Repulsion: On</button>
+		<div class="setting-buttons">
+			<button id="speed-button" type="button">Speed: 5</button>
+			<button id="repulsion-button" type="button" aria-pressed="true">Window Repulsion: On</button>
+		</div>
 	</main>
 
 	<script>
 		const volumeSlider = document.querySelector("#volume-slider");
 		const blockColor = document.querySelector("#block-color");
 		const playerColor = document.querySelector("#player-color");
+		const speedButton = document.querySelector("#speed-button");
 		const repulsionButton = document.querySelector("#repulsion-button");
+		const speeds = [3, 5, 8];
 		let repulsionEnabled = true;
+		let speed = 5;
 
 		function send(message) {
 			window.opener?.postMessage(message, window.location.origin);
 		}
 
 		function showRepulsionState() {
-			repulsionButton.textContent = `Enable Window Repulsion: ${repulsionEnabled ? "On" : "Off"}`;
+			repulsionButton.textContent = `Window Repulsion: ${repulsionEnabled ? "On" : "Off"}`;
 			repulsionButton.setAttribute("aria-pressed", String(repulsionEnabled));
 		}
 
@@ -165,7 +177,9 @@
 			volumeSlider.value = event.data.volume;
 			blockColor.value = event.data.block;
 			playerColor.value = event.data.player;
+			speed = event.data.speed;
 			repulsionEnabled = event.data.repulsionEnabled;
+			speedButton.textContent = `Speed: ${speed}`;
 			showColor(blockColor);
 			showColor(playerColor);
 			showRepulsionState();
@@ -189,6 +203,12 @@
 			repulsionEnabled = !repulsionEnabled;
 			showRepulsionState();
 			send({type: "settings-repulsion", enabled: repulsionEnabled});
+		});
+
+		speedButton.addEventListener("click", () => {
+			speed = speeds[(speeds.indexOf(speed) + 1) % speeds.length];
+			speedButton.textContent = `Speed: ${speed}`;
+			send({type: "settings-speed", speed});
 		});
 
 		showColor(blockColor);

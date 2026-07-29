@@ -10,12 +10,18 @@ const MIN_POPUP_SIZE = 100; // 弹窗口最小限制
 const mazeSizes = [{width: 33, height: 25}, {width: 41, height: 31}, {width: 49, height: 35}];
 const pieceCounts = [8, 16, 20];
 const colors = {block: 30, player: 0};
+const CHEST_ANIMATION_DURATION = 1000;
 
 let createdWindows = [];
 let maze;
 let won = false;
 let winWindow;
 let settingsWindow;
+let keyPosition;
+let hasKey = false;
+let chestOpenedAt = 0;
+let winTimer;
+let playerSpeed = 5;
 let mazeSizeIndex = 0;
 let pieceCountIndex = 0;
 const windowRepulsion = new WindowRepulsion(OVERLAP);
@@ -101,16 +107,36 @@ function createWindow({windowData, piece, cellSize, width, height, left, top}) {
 	windowRepulsion.addWindow(popup, windowData.id, left, top);
 }
 
+// 随机放置钥匙
+function placeKey(maze) {
+	const paths = [];
+	const goalX = maze.length - 2;
+	const goalY = maze[0].length - 2;
+
+	for (let x = 0; x < maze.length; x += 1) {
+		for (let y = 0; y < maze[x].length; y += 1) {
+			if (maze[x][y] === 1 && (x !== 1 || y !== 1) && (x !== goalX || y !== goalY)) {
+				paths.push({x, y});
+			}
+		}
+	}
+
+	return paths[Math.floor(Math.random() * paths.length)];
+}
+
 function startGame() {
 	closeGame();
 	playMusic();
 	player.x = 1;
 	player.y = 1;
 	won = false;
+	hasKey = false;
+	chestOpenedAt = 0;
 
 	const {width, height} = mazeSizes[mazeSizeIndex];
 	const [newMaze, ...windows] = initialize(width, height, pieceCounts[pieceCountIndex]);
 	maze = newMaze; // 更新全局 maze
+	keyPosition = placeKey(maze);
 	shufflePieces(windows);
 
 	for (const windowLayout of createLayout(maze, windows)) createWindow(windowLayout);
@@ -162,6 +188,15 @@ function sendColors() {
 	}
 }
 
+function sendSpeed() {
+	for (const item of createdWindows) {
+		item.popup.postMessage({
+			type: "speed",
+			speed: playerSpeed
+		}, window.location.origin);
+	}
+}
+
 function openSettings() {
 	if (settingsWindow && !settingsWindow.closed) {
 		settingsWindow.focus();
@@ -189,10 +224,11 @@ function sendPlayer() {
 }
 
 function closeGame() {
-    windowRepulsion.reset();
-    createdWindows = [];
-    if (winWindow && !winWindow.closed) {winWindow.close();}
-    winWindow = undefined;
+	clearTimeout(winTimer);
+	windowRepulsion.reset();
+	createdWindows = [];
+	if (winWindow && !winWindow.closed) winWindow.close();
+	winWindow = undefined;
 }
 
 function closeAllWindows() {
@@ -201,28 +237,51 @@ function closeAllWindows() {
 	settingsWindow = undefined;
 }
 
+function checkKey() {
+	if (!hasKey && Math.hypot(player.x - keyPosition.x, player.y - keyPosition.y) <= 0.5) {
+		hasKey = true;
+
+		for (const item of createdWindows) {
+			item.popup.postMessage({type: "key-collected"}, window.location.origin);
+		}
+	}
+}
+
 function checkWin() {
 	const goalX = maze.length - 2;
 	const goalY = maze[0].length - 2;
 
-	if (!won && Math.hypot(player.x - goalX, player.y - goalY) <= 0.5) {
-		won = true;
+	if (hasKey && !won && !chestOpenedAt && Math.hypot(player.x - goalX, player.y - goalY) <= 0.5) {
+		chestOpenedAt = Date.now();
 
 		for (const item of createdWindows) {
-			item.popup.postMessage({type: "win"}, window.location.origin);
+			item.popup.postMessage({
+				type: "open-chest",
+				startedAt: chestOpenedAt
+			}, window.location.origin);
 		}
 
-		const left = (screen.availLeft || 0) + (screen.availWidth - 500) / 2;
-		const top = (screen.availTop || 0) + (screen.availHeight - 250) / 2;
-		const winUrl = new URL("./win.html", window.location.href);
-
-		winWindow = window.open(
-			winUrl.href,
-			"win-window",
-			`popup=yes,width=${500},height=${250},left=${left},top=${top}`
-		);
-		winWindow?.focus();
+		winTimer = setTimeout(showWin, CHEST_ANIMATION_DURATION);
 	}
+}
+
+function showWin() {
+	won = true;
+
+	for (const item of createdWindows) {
+		item.popup.postMessage({type: "win"}, window.location.origin);
+	}
+
+	const left = (screen.availLeft || 0) + (screen.availWidth - 500) / 2;
+	const top = (screen.availTop || 0) + (screen.availHeight - 250) / 2;
+	const winUrl = new URL("./win.html", window.location.href);
+
+	winWindow = window.open(
+		winUrl.href,
+		"win-window",
+		`popup=yes,width=${500},height=${250},left=${left},top=${top}`
+	);
+	winWindow?.focus();
 }
 
 window.addEventListener("message", (event) => {
@@ -234,6 +293,7 @@ window.addEventListener("message", (event) => {
 				type: "settings-state",
 				volume: music.volume,
 				repulsionEnabled: windowRepulsion.enabled,
+				speed: playerSpeed,
 				...colors
 			}, window.location.origin);
 		}
@@ -249,6 +309,11 @@ window.addEventListener("message", (event) => {
 		if (event.data.type === "settings-color") {
 			colors[event.data.name] = event.data.value;
 			sendColors();
+		}
+
+		if (event.data.type === "settings-speed") {
+			playerSpeed = event.data.speed;
+			sendSpeed();
 		}
 
 		return;
@@ -280,6 +345,10 @@ window.addEventListener("message", (event) => {
 			top,
 			player,
 			won,
+			keyPosition,
+			hasKey,
+			chestOpenedAt,
+			speed: playerSpeed,
 			...getColors()
 		}, window.location.origin);
 	}
@@ -290,6 +359,7 @@ window.addEventListener("message", (event) => {
 		player.x = event.data.x;
 		player.y = event.data.y;
 		sendPlayer();
+		checkKey();
 		checkWin();
 	}
 });

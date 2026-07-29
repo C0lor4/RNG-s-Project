@@ -1,4 +1,3 @@
-const SPEED = 5;
 const SIZE = 0.9;
 const ANIMATION_SPEED = 8;
 const IDLE_ANIMATION_DELAY = 5000;
@@ -16,8 +15,9 @@ class Player {
 		this.lastMovementTime = performance.now();
 		this.movedRemotely = false;
 		this.color = "#000000";
+		this.speed = 5;
 		this.image = new Image();
-		this.image.src = "./Sprite.png";
+		this.image.src = "./assets/Sprite.png";
 
 		window.addEventListener("keydown", (event) => {
 			const key = event.key.toLowerCase();
@@ -57,6 +57,10 @@ class Player {
 		this.color = color;
 	}
 
+	setSpeed(speed) {
+		this.speed = speed;
+	}
+
 	check(x, y) {
 		const column = Math.floor(y + 0.5);
 		return (this.maze[Math.floor(x + 0.5)]?.[column] === 1 && this.maze[Math.floor(x + SIZE / 2 + 0.5)]?.[column] === 1);
@@ -70,7 +74,7 @@ class Player {
 		this.movedRemotely = false;
 
 		if (length) {
-			const distance = SPEED * deltaTime / length;
+			const distance = this.speed * deltaTime / length;
 			const oldX = this.x;
 			const oldY = this.y;
 			const nextX = this.x + moveX * distance;
