@@ -116,7 +116,7 @@ class Player {
 		const size = cellSize * SIZE;
 		const centerX = (this.y - startY + 0.5) * cellSize;
 		const centerY = (this.x - startX + 0.5) * cellSize;
-		const outsideWindow = centerX + size / 2 <= 0 || centerX - size / 2 >= columns * cellSize || centerY + size / 2 <= 0 || zcenterY - size / 2 >= rows * cellSize;
+		const outsideWindow = centerX + size / 2 <= 0 || centerX - size / 2 >= columns * cellSize || centerY + size / 2 <= 0 || centerY - size / 2 >= rows * cellSize;
 
 		if (outsideWindow) return;
 
