@@ -1,5 +1,5 @@
 const SPEED = 5;
-const SIZE = 0.7;
+const SIZE = 0.9;
 const ANIMATION_SPEED = 8;
 const IDLE_ANIMATION_DELAY = 5000;
 const MOVEMENT_KEYS = new Set(["w","a","s","d","arrowup","arrowleft","arrowdown","arrowright"]);
@@ -9,7 +9,7 @@ class Player {
 		this.x = 1;
 		this.y = 1;
 		this.maze = [];
-		this.keys = new Set();
+		this.keys = new Set(); // 记录按键
 		this.frame = 0;
 		this.animationRow = 0;
 		this.animationTime = 0;
@@ -22,7 +22,7 @@ class Player {
 			const key = event.key.toLowerCase();
 
 			if (MOVEMENT_KEYS.has(key)) {
-				event.preventDefault();
+				event.preventDefault(); // 阻止浏览器默认行为
 				this.keys.add(key);
 			}
 		});
@@ -61,7 +61,7 @@ class Player {
 		const moveX = Number(this.keys.has("s") || this.keys.has("arrowdown")) - Number(this.keys.has("w") || this.keys.has("arrowup"));
 		const moveY = Number(this.keys.has("d") || this.keys.has("arrowright")) - Number(this.keys.has("a") || this.keys.has("arrowleft"));
 		const length = Math.hypot(moveX, moveY);
-		let moved = this.movedRemotely;
+		let moved = this.movedRemotely; // 切换弹窗
 		this.movedRemotely = false;
 
 		if (length) {
@@ -79,7 +79,7 @@ class Player {
 				this.setAnimationRow(moveX, moveY);
 				this.lastMovementTime = performance.now();
 
-				window.opener.postMessage({ type: "move", x: this.x, y: this.y }, window.location.origin);
+				window.opener.postMessage({type: "move", x: this.x, y: this.y}, window.location.origin);
 			}
 		}
 
@@ -111,16 +111,12 @@ class Player {
 	}
 
 	draw(context, startX, startY, cellSize, rows, columns) {
-		if (!this.image.complete) return;
+		if (!this.image.complete) return; // 以防万一等spirte 加载后在绘画
 
 		const size = cellSize * SIZE;
 		const centerX = (this.y - startY + 0.5) * cellSize;
 		const centerY = (this.x - startX + 0.5) * cellSize;
-		const outsideWindow =
-			centerX + size / 2 <= 0 ||
-			centerX - size / 2 >= columns * cellSize ||
-			centerY + size / 2 <= 0 ||
-			centerY - size / 2 >= rows * cellSize;
+		const outsideWindow = centerX + size / 2 <= 0 || centerX - size / 2 >= columns * cellSize || centerY + size / 2 <= 0 || zcenterY - size / 2 >= rows * cellSize;
 
 		if (outsideWindow) return;
 

@@ -32,7 +32,7 @@ resizeCanvas();
 window.setManagedPosition = (left, top) => {
 	windowX = left;
 	windowY = top;
-	managedPosition = { left, top };
+	managedPosition = {left, top};
 };
 
 window.addEventListener("resize", () => {
@@ -56,6 +56,7 @@ window.addEventListener("resize", () => {
 	});
 });
 
+// 移动窗口
 playerCanvas.addEventListener("pointerdown", (event) => {
 	if (event.button !== 0) return;
 
@@ -104,6 +105,9 @@ function moveDraggedWindow() {
 	window.moveTo(left, top);
 }
 
+
+
+// 初始化成功
 window.addEventListener("message", (event) => {
 	const data = event.data;
 
@@ -139,10 +143,7 @@ window.addEventListener("message", (event) => {
 function sendReady() {
 	requestAnimationFrame(() => {
 		requestAnimationFrame(() => {
-			window.opener.postMessage(
-				{ type: "ready" },
-				window.location.origin
-			);
+			window.opener.postMessage({type: "ready"}, window.location.origin);
 		});
 	});
 }
@@ -150,7 +151,7 @@ function sendReady() {
 if (document.readyState === "complete") {
 	sendReady();
 } else {
-	window.addEventListener("load", sendReady, { once: true });
+	window.addEventListener("load", sendReady, {once: true});
 }
 
 window.setInterval(() => {
@@ -166,11 +167,12 @@ function resizeCanvas() {
 	playerCanvas.height = window.innerHeight;
 }
 
+//  画方块
 function drawPiece() {
 	context.fillStyle = "#000000";
 	context.fillRect(0, 0, canvas.width, canvas.height);
 
-	if (!piece) return;
+	if (!piece) return; // 可能被关掉了
 
 	const rows = piece.length;
 	const columns = piece[0].length;
@@ -240,27 +242,13 @@ function drawPiece() {
 	const localX = goalX - startX;
 	const localY = goalY - startY;
 
-	if (
-		diamondVisible &&
-		diamond.complete &&
-		diamond.naturalWidth &&
-		localX >= 0 &&
-		localX < rows &&
-		localY >= 0 &&
-		localY < columns
-	) {
+	if (diamondVisible && diamond.complete && diamond.naturalWidth && localX >= 0 && localX < rows && localY >= 0 && localY < columns) {
 		const size = cellSize * 0.7;
 		const centerX = (localY + 0.5) * cellSize;
 		const centerY = (localX + 0.5) * cellSize;
 
 		context.imageSmoothingEnabled = false;
-		context.drawImage(
-			diamond,
-			centerX - size / 2,
-			centerY - size / 2,
-			size,
-			size
-		);
+		context.drawImage(diamond, centerX - size / 2, centerY - size / 2, size, size);
 	}
 }
 
