@@ -1,7 +1,7 @@
 # Sneaky Switch
-**Sneaky Switch is a browser-based maze game in which you guide a stickman to a diamond. The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or taste your luck. Different maze sizes and piece counts provide multiple difficulty combinations.**
+**Sneaky Switch** is a browser-based maze game in which you guide a stickman to a diamond. The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or taste your luck. Different maze sizes and piece counts provide multiple difficulty combinations.
 
-[Play the demo](https://c0lor4.github.io/SneakySwitch/)
+## **[Play the demo](https://c0lor4.github.io/SneakySwitch/)**
 
 ![](https://i.imgur.com/TIKA1Gp.png)
 
@@ -49,11 +49,12 @@ Do not open `index.html` directly as a local file. The game uses JavaScript modu
 - Use WASD or arrows to move
 - Press **Start** to play
 - Select a maze size and piece count from the **Difficulty** menu.
-| Option | Width | Height | Pop-ups
-|---|---:|---:|---:|
-| Easy | 33 | 25 | 8 |
-| Medium | 41 | 31 | 16 |
-| HARD | 49 | 35 | 20 |
+
+|Option |Width x Height |Pop-ups
+|---|---|---|
+|Easy | 33 x 25 | 8 |
+|Medium | 41 x 31 | 16 |
+|HARD | 49 x 35 | 20 |
 - Click **Close** to close all game pop-ups.
 - Minimizing the main window disables the pop-up repulsion effect.
 
