@@ -9,11 +9,11 @@ const music = new Audio("./music.mp3");
 const WIN_DISTANCE = 0.5;
 const MIN_POPUP_SIZE = 100;
 const mazeSizes = [
-	{ width: 25, height: 17 },
-	{ width: 33, height: 21 },
-	{ width: 41, height: 25 }
+	{ width: 33, height: 25 },
+	{ width: 41, height: 31 },
+	{ width: 49, height: 35 }
 ];
-const pieceCounts = [8, 16, 32];
+const pieceCounts = [8, 16, 20];
 
 let createdWindows = [];
 let maze;
