@@ -30,6 +30,13 @@ function getPiece(maze, windowData) {
 	return maze.slice(windowData.start_x, windowData.end_x + 1).map((row) => row.slice(windowData.start_y, windowData.end_y + 1));
 }
 
+function shufflePieces(pieces) {
+	for (let index = pieces.length - 1; index > 0; index--) {
+		const randomIndex = Math.floor(Math.random() * (index + 1));
+		[pieces[index], pieces[randomIndex]] = [pieces[randomIndex], pieces[index]];
+	}
+}
+
 function createLayout(maze, windows) {
 	const frameWidth = window.outerWidth - window.innerWidth;
 	const frameHeight = window.outerHeight - window.innerHeight;
@@ -91,8 +98,8 @@ function createLayout(maze, windows) {
 		const popupHeight = height + frameHeight;
 		const slotLeft = screenLeft + index % columns * slotWidth;
 		const slotTop = screenTop + Math.floor(index / columns) * slotHeight;
-		const left = slotLeft + Math.random() * Math.max(0, slotWidth - popupWidth);
-		const top = slotTop + Math.random() * Math.max(0, slotHeight - popupHeight);
+		const left = slotLeft + Math.max(0, slotWidth - popupWidth) / 2;
+		const top = slotTop + Math.max(0, slotHeight - popupHeight) / 2;
 
 		return {
 			windowData,
@@ -142,10 +149,17 @@ function startGame() {
 		pieceCounts[pieceCountIndex]
 	);
 	maze = newMaze;
+	shufflePieces(windows);
 
 	for (const windowLayout of createLayout(maze, windows)) createWindow(windowLayout);
 
-	createdWindows[0].popup.focus();
+	const playerWindow = createdWindows.find((item) =>
+		player.x >= item.start_x &&
+		player.x <= item.end_x &&
+		player.y >= item.start_y &&
+		player.y <= item.end_y
+	);
+	playerWindow?.popup?.focus();
 }
 
 function playMusic() {

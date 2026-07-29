@@ -1,5 +1,6 @@
 import Player from "./player.js";
 
+const SIZE_RETRY_INTERVAL = 100;
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
 const playerCanvas = document.createElement("canvas");
@@ -23,6 +24,7 @@ let managedPosition;
 let restoringSize = false;
 let drag;
 let diamondVisible = true;
+let nextSizeRetry = 0;
 
 document.body.append(canvas, playerCanvas);
 resizeCanvas();
@@ -115,6 +117,7 @@ window.addEventListener("message", (event) => {
 		window.moveTo(data.left, data.top);
 		windowWidth = data.width + window.outerWidth - window.innerWidth;
 		windowHeight = data.height + window.outerHeight - window.innerHeight;
+		nextSizeRetry = 0;
 		window.resizeTo(windowWidth, windowHeight);
 		player.setMaze(data.maze);
 		player.setPosition(data.player);
@@ -133,10 +136,22 @@ window.addEventListener("message", (event) => {
 	}
 });
 
-window.opener.postMessage(
-	{ type: "ready" },
-	window.location.origin
-);
+function sendReady() {
+	requestAnimationFrame(() => {
+		requestAnimationFrame(() => {
+			window.opener.postMessage(
+				{ type: "ready" },
+				window.location.origin
+			);
+		});
+	});
+}
+
+if (document.readyState === "complete") {
+	sendReady();
+} else {
+	window.addEventListener("load", sendReady, { once: true });
+}
 
 window.setInterval(() => {
 	if (!window.opener || window.opener.closed) window.close();
@@ -253,6 +268,19 @@ function render(currentTime) {
 	const deltaTime = Math.min((currentTime - lastFrameTime) / 1000, 0.05);
 	lastFrameTime = currentTime;
 	moveDraggedWindow();
+
+	if (
+		windowWidth &&
+		!restoringSize &&
+		currentTime >= nextSizeRetry &&
+		(
+			Math.abs(window.outerWidth - windowWidth) > 1 ||
+			Math.abs(window.outerHeight - windowHeight) > 1
+		)
+	) {
+		nextSizeRetry = currentTime + SIZE_RETRY_INTERVAL;
+		window.resizeTo(windowWidth, windowHeight);
+	}
 
 	if (
 		managedPosition &&
