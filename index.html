@@ -27,25 +27,28 @@
 
 		.start-title {
 			position: fixed;
-			top: 48px;
+			top: clamp(16px, 6vh, 48px);
+			width: calc(100% - 32px);
 			color: #fff;
-			font-size: 6rem;
+			font-size: clamp(2.5rem, 8vw, 6rem);
+			line-height: 1;
+			text-align: center;
 			letter-spacing: 0.02em;
 		}
 
 		.start-options {
 			display: grid;
-			gap: 24px;
-			width: min(420px, calc(100vw - 48px));
+			gap: clamp(12px, 2.5vh, 24px);
+			width: min(420px, calc(100vw - 32px));
 		}
 
 		.start-button {
-			min-height: 68px;
-			padding: 18px 28px;
+			min-height: clamp(48px, 8vh, 68px);
+			padding: clamp(10px, 2vh, 18px) clamp(18px, 5vw, 28px);
 			border: 1px solid #fff;
 			background: transparent;
 			color: #fff;
-			font-size: 1.25rem;
+			font-size: clamp(1rem, 2.5vw, 1.25rem);
 			font-weight: 600;
 			cursor: pointer;
 		}
@@ -59,7 +62,7 @@
 		.difficulty-options {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 12px;
+			gap: clamp(8px, 1.5vh, 12px);
 		}
 
 		.difficulty-options[hidden] {
@@ -68,13 +71,13 @@
 
 		.volume-control {
 			display: grid;
-			grid-template-columns: 90px 1fr;
+			grid-template-columns: minmax(70px, 90px) 1fr;
 			align-items: center;
-			min-height: 68px;
-			padding: 18px 28px;
+			min-height: clamp(48px, 8vh, 68px);
+			padding: clamp(10px, 2vh, 18px) clamp(18px, 5vw, 28px);
 			border: 1px solid #fff;
 			color: #fff;
-			font-size: 1.25rem;
+			font-size: clamp(1rem, 2.5vw, 1.25rem);
 			font-weight: 600;
 		}
 
