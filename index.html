@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Sneaky Switch</title>
+	<link rel="icon" type="image/png" href="./Icon.png">
 	<style>
 		* {
 			box-sizing: border-box;
@@ -24,23 +25,9 @@
 			font-family: system-ui, sans-serif;
 		}
 
-		.start-header {
+		.start-title {
 			position: fixed;
 			top: 48px;
-			display: flex;
-			align-items: center;
-			gap: 24px;
-		}
-
-		.start-logo {
-			width: 96px;
-			height: 96px;
-			padding: 8px;
-			background: #fff;
-			image-rendering: pixelated;
-		}
-
-		.start-title {
 			color: #fff;
 			font-size: 6rem;
 			letter-spacing: 0.02em;
@@ -99,10 +86,7 @@
 	</style>
 </head>
 <body>
-	<header class="start-header">
-		<img class="start-logo" src="./Head.png" alt="Sneaky Switch logo">
-		<h1 class="start-title">Sneaky Switch</h1>
-	</header>
+	<h1 class="start-title">Sneaky Switch</h1>
 	<main class="start-options">
 		<button class="start-button" id="start-button" type="button">Start</button>
 		<button class="start-button" id="difficulty-button" type="button" aria-expanded="false">Difficulty</button>
