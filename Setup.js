@@ -1,18 +1,13 @@
 /*
  * Based on the popup logic from https://github.com/charliegerard/flappy-windows and  
  */
-import { initialize } from "./initialize.js";
-import WindowRepulsion, { OVERLAP } from "./WindowRepulsion.js";
+import {initialize} from "./initialize.js";
+import WindowRepulsion, {OVERLAP} from "./WindowRepulsion.js";
 
-const player = { x: 1, y: 1 };
+const player = {x: 1, y: 1};
 const music = new Audio("./music.mp3");
-const WIN_DISTANCE = 0.5;
-const MIN_POPUP_SIZE = 100;
-const mazeSizes = [
-	{ width: 33, height: 25 },
-	{ width: 41, height: 31 },
-	{ width: 49, height: 35 }
-];
+const MIN_POPUP_SIZE = 100; // 弹窗口最小限制
+const mazeSizes = [{width: 33, height: 25}, {width: 41, height: 31}, {width: 49, height: 35}];
 const pieceCounts = [8, 16, 20];
 
 let createdWindows = [];
@@ -40,93 +35,65 @@ function shufflePieces(pieces) {
 function createLayout(maze, windows) {
 	const frameWidth = window.outerWidth - window.innerWidth;
 	const frameHeight = window.outerHeight - window.innerHeight;
-	const pieces = windows.map((windowData) => ({
-		windowData,
-		piece: getPiece(maze, windowData)
-	}));
-	const maximumColumns = Math.max(...pieces.map(({ piece }) => piece[0].length));
-	const maximumRows = Math.max(...pieces.map(({ piece }) => piece.length));
-	const mazeCellSize = Math.min(
-		screen.availWidth / maze[0].length,
-		screen.availHeight / maze.length
-	);
+	const pieces = windows.map((windowData) => ({windowData, piece: getPiece(maze, windowData)}));
+	const maximumColumns = Math.max(...pieces.map(({piece}) => piece[0].length));
+	const maximumRows = Math.max(...pieces.map(({piece}) => piece.length));
+	const mazeCellSize = Math.min(screen.availWidth / maze[0].length, screen.availHeight / maze.length);
 	let layout = {
 		columns: Math.ceil(Math.sqrt(windows.length)),
 		cellSize: 1,
 		emptySlots: Infinity
 	};
 
+	// 找layout的最优解
 	for (let columns = 1; columns <= windows.length; columns++) {
 		const rows = Math.ceil(windows.length / columns);
-		const slotWidth = screen.availWidth / columns;
+		const slotWidth = screen.availWidth / columns; // 屏幕弹窗的划分
 		const slotHeight = screen.availHeight / rows;
 
-		if (
-			slotWidth < frameWidth + MIN_POPUP_SIZE ||
-			slotHeight < frameHeight + MIN_POPUP_SIZE
-		) {
+		if (slotWidth < frameWidth + MIN_POPUP_SIZE || slotHeight < frameHeight + MIN_POPUP_SIZE) {
 			continue;
 		}
-
-		const cellSize = Math.floor(Math.min(
-			mazeCellSize,
-			(slotWidth - frameWidth) / maximumColumns,
-			(slotHeight - frameHeight) / maximumRows
-		));
+		// 网页内容宽度=位置宽度-浏览器边框宽度
+		// 单格宽度=网页内容宽度÷最大区域列数
+		const cellSize = Math.floor(Math.min(mazeCellSize, (slotWidth - frameWidth) / maximumColumns, (slotHeight - frameHeight) / maximumRows));
 		const emptySlots = columns * rows - windows.length;
 
-		if (
-			cellSize > layout.cellSize ||
-			cellSize === layout.cellSize && emptySlots < layout.emptySlots
-		) {
-			layout = { columns, cellSize, emptySlots };
+		// 最大化迷宫格子, 其次空位
+		if (cellSize > layout.cellSize || cellSize === layout.cellSize && emptySlots < layout.emptySlots) {
+			layout = {columns, cellSize, emptySlots};
 		}
 	}
 
-	const columns = layout.columns;
-	const rows = Math.ceil(windows.length / columns);
-	const slotWidth = screen.availWidth / columns;
+	const rows = Math.ceil(windows.length / layout.columns);
+	const slotWidth = screen.availWidth / layout.columns;
 	const slotHeight = screen.availHeight / rows;
 	const cellSize = Math.max(1, layout.cellSize);
 	const screenLeft = screen.availLeft || 0;
 	const screenTop = screen.availTop || 0;
 
-	return pieces.map(({ windowData, piece }, index) => {
+	return pieces.map(({windowData, piece}, index) => {
 		const width = Math.max(piece[0].length * cellSize, MIN_POPUP_SIZE);
 		const height = Math.max(piece.length * cellSize, MIN_POPUP_SIZE);
 		const popupWidth = width + frameWidth;
 		const popupHeight = height + frameHeight;
-		const slotLeft = screenLeft + index % columns * slotWidth;
-		const slotTop = screenTop + Math.floor(index / columns) * slotHeight;
-		const left = slotLeft + Math.max(0, slotWidth - popupWidth) / 2;
+		const slotLeft = screenLeft + index % layout.columns * slotWidth; // 弹窗区域
+		const slotTop = screenTop + Math.floor(index / layout.columns) * slotHeight;
+		const left = slotLeft + Math.max(0, slotWidth - popupWidth) / 2; // 弹窗第一个位置
 		const top = slotTop + Math.max(0, slotHeight - popupHeight) / 2;
 
-		return {
-			windowData,
-			piece,
-			cellSize,
-			width,
-			height,
-			left: Math.round(left),
-			top: Math.round(top)
-		};
+		return {windowData, piece, cellSize, width, height, left: Math.round(left), top: Math.round(top)};
 	});
 }
 
-function createWindow({ windowData, piece, cellSize, width, height, left, top }) {
+function createWindow({windowData, piece, cellSize, width, height, left, top}) {
 	const gameUrl = new URL("./game.html", window.location.href);
 
-	const features = [
-		"popup=yes",
-		`height=${height}`,
-		`width=${width}`,
-		`left=${left}`,
-		`top=${top}`
-	].join(",");
 	const popup = window.open(
 		gameUrl.href,
-		`${windowData.id}-${Date.now()}`,
-		features
+		// `${windowData.id}-${Date.now()}`,// 避免用到重复的弹窗名
+		`${windowData.id}`,
+		`popup=yes,height=${height},width=${width},left=${left},top=${top}`
 	);
 
 	createdWindows.push({...windowData, popup, piece, cellSize, width, height, left, top});
@@ -134,25 +101,20 @@ function createWindow({ windowData, piece, cellSize, width, height, left, top })
 }
 
 function startGame() {
+	closeGame();
 	playMusic();
-	closeWinWindow();
-	windowRepulsion.reset();
-	createdWindows = [];
 	player.x = 1;
 	player.y = 1;
 	won = false;
 
-	const { width, height } = mazeSizes[mazeSizeIndex];
-	const [newMaze, ...windows] = initialize(
-		width,
-		height,
-		pieceCounts[pieceCountIndex]
-	);
-	maze = newMaze;
+	const {width, height} = mazeSizes[mazeSizeIndex];
+	const [newMaze, ...windows] = initialize(width, height, pieceCounts[pieceCountIndex]);
+	maze = newMaze; // 更新全局 maze
 	shufflePieces(windows);
 
 	for (const windowLayout of createLayout(maze, windows)) createWindow(windowLayout);
 
+	// 寻找 Player 然后 focus 那个弹窗
 	const playerWindow = createdWindows.find((item) =>
 		player.x >= item.start_x &&
 		player.x <= item.end_x &&
@@ -178,64 +140,55 @@ function changeVolume(event) {
 
 function sendPlayer() {
 	for (const item of createdWindows) {
-		item.popup.postMessage({
-			type: "player", player},
-			window.location.origin
-		);
+		item.popup.postMessage({type: "player", player}, window.location.origin);
 	}
 }
 
 function closeGame() {
-	windowRepulsion.reset();
-	createdWindows = [];
-	closeWinWindow();
+    windowRepulsion.reset();
+    createdWindows = [];
+    if (winWindow && !winWindow.closed) {winWindow.close();}
+    winWindow = undefined;
 }
 
 function checkWin() {
 	const goalX = maze.length - 2;
 	const goalY = maze[0].length - 2;
 
-	if (
-		!won &&
-		Math.hypot(player.x - goalX, player.y - goalY) <= WIN_DISTANCE
-	) {
+	if (!won && Math.hypot(player.x - goalX, player.y - goalY) <= 0.5) {
 		won = true;
 
 		for (const item of createdWindows) {
-			item.popup.postMessage({ type: "win" }, window.location.origin);
+			item.popup.postMessage({type: "win"}, window.location.origin);
 		}
 
-		const width = 500;
-		const height = 250;
-		const left = (screen.availLeft || 0) + (screen.availWidth - width) / 2;
-		const top = (screen.availTop || 0) + (screen.availHeight - height) / 2;
+		const left = (screen.availLeft || 0) + (screen.availWidth - 500) / 2;
+		const top = (screen.availTop || 0) + (screen.availHeight - 250) / 2;
 		const winUrl = new URL("./win.html", window.location.href);
 
 		winWindow = window.open(
 			winUrl.href,
 			"win-window",
-			`popup=yes,width=${width},height=${height},left=${left},top=${top}`
+			`popup=yes,width=${500},height=${250},left=${left},top=${top}`
 		);
 		winWindow?.focus();
 	}
 }
 
-function closeWinWindow() {
-	if (winWindow && !winWindow.closed) winWindow.close();
-	winWindow = undefined;
-}
-
 window.addEventListener("message", (event) => {
+	// 告诉 WindowRepulsion 可以更新
 	if (event.data.type === "window-restored") {
 		windowRepulsion.syncWindow(event.source, event.data);
 	}
 
+	// Mac 的问题
 	if (event.data.type === "ready") {
 		const currentWindow = createdWindows.find((item) => item.popup === event.source);
 		if (!currentWindow) return;
 
-		const { piece, start_x, start_y, cellSize, width, height, left, top } = currentWindow;
+		const {piece, start_x, start_y, cellSize, width, height, left, top} = currentWindow;
 
+		// main.js 会保存数据并开始游戏
 		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, cellSize, width, height, left, top, player, won}, window.location.origin);
 	}
 
@@ -267,7 +220,7 @@ difficultyButton.addEventListener("click", () => {
 
 mazeSizeButton.addEventListener("click", () => {
 	mazeSizeIndex = (mazeSizeIndex + 1) % mazeSizes.length;
-	const { width, height } = mazeSizes[mazeSizeIndex];
+	const {width, height} = mazeSizes[mazeSizeIndex];
 	mazeSizeButton.textContent = `${width}x${height}`;
 });
 
