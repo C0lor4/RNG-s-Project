@@ -1,5 +1,5 @@
 # Sneaky Switch
-**Sneaky Switch** is a browser-based maze game in which you guide a stickman to a diamond. The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or taste your luck. Different maze sizes and piece counts provide multiple difficulty combinations.
+**Sneaky Switch** is a browser-based maze game in which you guide a stickman through a maze, collect a key, and then reach the chest to escape. The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or test your luck. Different maze sizes and piece counts provide multiple difficulty combinations.
 
 <div id="toc">
   <ul align="center" style="list-style: none">
@@ -55,6 +55,7 @@ Do not open `index.html` directly as a local file. The game uses JavaScript modu
 
 ## How to play
 - Use WASD or arrows to move
+- Find and collect the key first, then reach the chest to open it and win.
 - Press **Start** to play
 - Select a maze size and piece count from the **Difficulty** menu.
 
