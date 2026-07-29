@@ -1,5 +1,5 @@
 # Sneaky Switch
-**Sneaky Switch** is a browser-based maze game in which you guide a stickman through a maze, collect a key, and then reach the chest to escape. The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or test your luck. Different maze sizes and piece counts provide multiple difficulty combinations.
+**Sneaky Switch** is a browser-based maze game in which you guide a stickman through a maze, collect a 🗝️, and then reach the chest (Challenge yourself by obtaining the 💎). The maze is divided across multiple browser windows, which must be rearranged to reveal the complete path or test your luck. Different maze sizes and piece counts provide multiple difficulty combinations.
 
 <div id="toc">
   <ul align="center" style="list-style: none">
@@ -11,7 +11,7 @@
   </ul>
 </div>
 
-![](https://i.imgur.com/TIKA1Gp.png)
+![](https://i.imgur.com/CjGKbun.png)
 
 
 ## Game requirements
