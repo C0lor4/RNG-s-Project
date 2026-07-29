@@ -25,6 +25,7 @@ let restoringSize = false;
 let drag;
 let diamondVisible = true;
 let nextSizeRetry = 0;
+let blockColor = "#ff0000";
 
 document.body.append(canvas, playerCanvas);
 resizeCanvas();
@@ -125,6 +126,8 @@ window.addEventListener("message", (event) => {
 		window.resizeTo(windowWidth, windowHeight);
 		player.setMaze(data.maze);
 		player.setPosition(data.player);
+		player.setColor(data.playerColor);
+		blockColor = data.blockColor;
 		diamondVisible = !data.won;
 		resizeCanvas();
 		drawPiece();
@@ -136,6 +139,12 @@ window.addEventListener("message", (event) => {
 
 	if (data.type === "win") {
 		diamondVisible = false;
+		drawPiece();
+	}
+
+	if (data.type === "colors") {
+		blockColor = data.blockColor;
+		player.setColor(data.playerColor);
 		drawPiece();
 	}
 });
@@ -179,7 +188,7 @@ function drawPiece() {
 	context.fillStyle = "#808080";
 	context.fillRect(0, 0, columns * cellSize, rows * cellSize);
 	context.fillStyle = "#ffffff";
-	context.strokeStyle = "#ff0000";
+	context.strokeStyle = blockColor;
 	context.lineWidth = 3;
 
 	for (let x = 0; x < rows; x += 1) {

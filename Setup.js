@@ -5,20 +5,21 @@ import {initialize} from "./initialize.js";
 import WindowRepulsion, {OVERLAP} from "./WindowRepulsion.js";
 
 const player = {x: 1, y: 1};
-const music = new Audio("./music.mp3");
+const music = document.querySelector("#music");
 const MIN_POPUP_SIZE = 100; // 弹窗口最小限制
 const mazeSizes = [{width: 33, height: 25}, {width: 41, height: 31}, {width: 49, height: 35}];
 const pieceCounts = [8, 16, 20];
+const colors = {block: 30, player: 0};
 
 let createdWindows = [];
 let maze;
 let won = false;
 let winWindow;
+let settingsWindow;
 let mazeSizeIndex = 0;
 let pieceCountIndex = 0;
 const windowRepulsion = new WindowRepulsion(OVERLAP);
 
-music.loop = true;
 music.volume = 0.5;
 
 function getPiece(maze, windowData) {
@@ -128,14 +129,57 @@ function playMusic() {
 	if (music.volume > 0) music.play().catch(() => {});
 }
 
-function changeVolume(event) {
-	music.volume = Number(event.target.value);
+function changeVolume(value) {
+	music.volume = Number(value);
 
 	if (music.volume === 0) {
 		music.pause();
 	} else if (music.paused) {
 		playMusic();
 	}
+}
+
+function getColor(value) {
+	if (value < 30) return `hsl(0 100% ${value / 30 * 50}%)`;
+	if (value <= 390) return `hsl(${value - 30} 100% 50%)`;
+
+	const white = (value - 390) / 30;
+	return `hsl(0 ${100 - white * 100}% ${50 + white * 50}%)`;
+}
+
+function getColors() {
+	return {
+		blockColor: getColor(colors.block),
+		playerColor: getColor(colors.player)
+	};
+}
+
+function sendColors() {
+	const message = {type: "colors", ...getColors()};
+
+	for (const item of createdWindows) {
+		item.popup.postMessage(message, window.location.origin);
+	}
+}
+
+function openSettings() {
+	if (settingsWindow && !settingsWindow.closed) {
+		settingsWindow.focus();
+		return;
+	}
+
+	const width = 760;
+	const height = 420;
+	const left = (screen.availLeft || 0) + (screen.availWidth - width) / 2;
+	const top = (screen.availTop || 0) + (screen.availHeight - height) / 2;
+	const settingsUrl = new URL("./settings.html", window.location.href);
+
+	settingsWindow = window.open(
+		settingsUrl.href,
+		"settings-window",
+		`popup=yes,width=${width},height=${height},left=${left},top=${top}`
+	);
+	settingsWindow?.focus();
 }
 
 function sendPlayer() {
@@ -149,6 +193,12 @@ function closeGame() {
     createdWindows = [];
     if (winWindow && !winWindow.closed) {winWindow.close();}
     winWindow = undefined;
+}
+
+function closeAllWindows() {
+	closeGame();
+	if (settingsWindow && !settingsWindow.closed) settingsWindow.close();
+	settingsWindow = undefined;
 }
 
 function checkWin() {
@@ -176,6 +226,34 @@ function checkWin() {
 }
 
 window.addEventListener("message", (event) => {
+	if (event.origin !== window.location.origin) return;
+
+	if (event.source === settingsWindow) {
+		if (event.data.type === "settings-ready") {
+			event.source.postMessage({
+				type: "settings-state",
+				volume: music.volume,
+				repulsionEnabled: windowRepulsion.enabled,
+				...colors
+			}, window.location.origin);
+		}
+
+		if (event.data.type === "settings-volume") {
+			changeVolume(event.data.value);
+		}
+
+		if (event.data.type === "settings-repulsion") {
+			windowRepulsion.setEnabled(event.data.enabled);
+		}
+
+		if (event.data.type === "settings-color") {
+			colors[event.data.name] = event.data.value;
+			sendColors();
+		}
+
+		return;
+	}
+
 	// 告诉 WindowRepulsion 可以更新
 	if (event.data.type === "window-restored") {
 		windowRepulsion.syncWindow(event.source, event.data);
@@ -189,7 +267,21 @@ window.addEventListener("message", (event) => {
 		const {piece, start_x, start_y, cellSize, width, height, left, top} = currentWindow;
 
 		// main.js 会保存数据并开始游戏
-		event.source.postMessage({type: "initialize", maze, piece, start_x, start_y, cellSize, width, height, left, top, player, won}, window.location.origin);
+		event.source.postMessage({
+			type: "initialize",
+			maze,
+			piece,
+			start_x,
+			start_y,
+			cellSize,
+			width,
+			height,
+			left,
+			top,
+			player,
+			won,
+			...getColors()
+		}, window.location.origin);
 	}
 
 	if (event.data.type === "move") {
@@ -204,14 +296,14 @@ window.addEventListener("message", (event) => {
 
 const startButton = document.querySelector("#start-button");
 const closeButton = document.querySelector("#close-button");
+const settingsButton = document.querySelector("#settings-button");
 const difficultyButton = document.querySelector("#difficulty-button");
 const difficultyOptions = document.querySelector("#difficulty-options");
 const mazeSizeButton = document.querySelector("#maze-size-button");
 const pieceCountButton = document.querySelector("#piece-count-button");
-const volumeSlider = document.querySelector("#volume-slider");
 startButton.addEventListener("click", startGame);
-closeButton.addEventListener("click", closeGame);
-volumeSlider.addEventListener("input", changeVolume);
+closeButton.addEventListener("click", closeAllWindows);
+settingsButton.addEventListener("click", openSettings);
 
 difficultyButton.addEventListener("click", () => {
 	difficultyOptions.hidden = !difficultyOptions.hidden;

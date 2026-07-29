@@ -7,6 +7,7 @@ export const OVERLAP = 16;
 class WindowRepulsion {
 	constructor(allowedOverlap = OVERLAP) {
 		this.allowedOverlap = allowedOverlap;
+		this.enabled = true;
 		this.windows = [];
 		this.animate = this.animate.bind(this);
 		window.requestAnimationFrame(this.animate);
@@ -32,6 +33,15 @@ class WindowRepulsion {
 			movingByCode: true
 		});
 		popup.moveTo(left, top);
+	}
+
+	setEnabled(enabled) {
+		this.enabled = Boolean(enabled);
+
+		for (const item of this.windows) {
+			item.deltaX = 0;
+			item.deltaY = 0;
+		}
 	}
 
 	reset() {
@@ -71,6 +81,8 @@ class WindowRepulsion {
 		for (const item of this.windows) {
 			this.updateWindowInformation(item);
 		}
+
+		if (!this.enabled) return;
 
 		const queue = this.windows
 			.filter((item) => item.deltaX || item.deltaY)

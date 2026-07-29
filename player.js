@@ -15,6 +15,7 @@ class Player {
 		this.animationTime = 0;
 		this.lastMovementTime = performance.now();
 		this.movedRemotely = false;
+		this.color = "#000000";
 		this.image = new Image();
 		this.image.src = "./Sprite.png";
 
@@ -50,6 +51,10 @@ class Player {
 
 	setMaze(maze) {
 		this.maze = maze;
+	}
+
+	setColor(color) {
+		this.color = color;
 	}
 
 	check(x, y) {
@@ -120,8 +125,16 @@ class Player {
 
 		if (outsideWindow) return;
 
+		const left = centerX - size / 2;
+		const top = centerY - size / 2;
+
 		context.imageSmoothingEnabled = false;
-		context.drawImage(this.image, this.frame * 32, this.animationRow * 32, 32, 32, centerX - size / 2, centerY - size / 2, size, size);
+		context.drawImage(this.image, this.frame * 32, this.animationRow * 32, 32, 32, left, top, size, size);
+		context.save();
+		context.globalCompositeOperation = "source-atop";
+		context.fillStyle = this.color;
+		context.fillRect(left, top, size, size);
+		context.restore();
 	}
 }
 
