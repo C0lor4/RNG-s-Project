@@ -7,7 +7,7 @@ export const OVERLAP = 16;
 class WindowRepulsion {
 	constructor(allowedOverlap = OVERLAP) {
 		this.allowedOverlap = allowedOverlap;
-		this.enabled = true;
+		this.enabled = false;
 		this.windows = [];
 		this.animate = this.animate.bind(this);
 		window.requestAnimationFrame(this.animate);

@@ -3,14 +3,19 @@
  */
 import {initialize} from "./initialize.js";
 import WindowRepulsion, {OVERLAP} from "./WindowRepulsion.js";
+import {loadSettings, saveSettings} from "./SettingsStore.js";
 
 const player = {x: 1, y: 1};
 const music = document.querySelector("#music");
 const MIN_POPUP_SIZE = 100; // 弹窗口最小限制
 const mazeSizes = [{width: 33, height: 25}, {width: 41, height: 31}, {width: 49, height: 35}];
 const pieceCounts = [8, 16, 20];
-const colors = {block: 30, player: 0};
 const CHEST_ANIMATION_DURATION = 1000;
+const storedSettings = loadSettings();
+const colors = {
+	block: storedSettings.blockColor,
+	player: storedSettings.playerColor
+};
 
 let createdWindows = [];
 let maze;
@@ -23,12 +28,25 @@ let diamondPosition;
 let diamondCollected = false;
 let chestOpenedAt = 0;
 let winTimer;
-let playerSpeed = 5;
-let mazeSizeIndex = 0;
-let pieceCountIndex = 0;
+let playerSpeed = storedSettings.speed;
+let mazeSizeIndex = storedSettings.mazeSizeIndex;
+let pieceCountIndex = storedSettings.pieceCountIndex;
 const windowRepulsion = new WindowRepulsion(OVERLAP);
 
-music.volume = 0.5;
+music.volume = storedSettings.volume;
+windowRepulsion.setEnabled(storedSettings.repulsionEnabled);
+
+function persistSettings() {
+	saveSettings({
+		volume: music.volume,
+		blockColor: colors.block,
+		playerColor: colors.player,
+		repulsionEnabled: windowRepulsion.enabled,
+		speed: playerSpeed,
+		mazeSizeIndex,
+		pieceCountIndex
+	});
+}
 
 function getPiece(maze, windowData) {
 	return maze.slice(windowData.start_x, windowData.end_x + 1).map((row) => row.slice(windowData.start_y, windowData.end_y + 1));
@@ -316,20 +334,24 @@ window.addEventListener("message", (event) => {
 
 		if (event.data.type === "settings-volume") {
 			changeVolume(event.data.value);
+			persistSettings();
 		}
 
 		if (event.data.type === "settings-repulsion") {
 			windowRepulsion.setEnabled(event.data.enabled);
+			persistSettings();
 		}
 
 		if (event.data.type === "settings-color") {
 			colors[event.data.name] = event.data.value;
 			sendColors();
+			persistSettings();
 		}
 
 		if (event.data.type === "settings-speed") {
 			playerSpeed = event.data.speed;
 			sendSpeed();
+			persistSettings();
 		}
 
 		return;
@@ -390,6 +412,9 @@ const difficultyButton = document.querySelector("#difficulty-button");
 const difficultyOptions = document.querySelector("#difficulty-options");
 const mazeSizeButton = document.querySelector("#maze-size-button");
 const pieceCountButton = document.querySelector("#piece-count-button");
+const selectedMazeSize = mazeSizes[mazeSizeIndex];
+mazeSizeButton.textContent = `${selectedMazeSize.width}x${selectedMazeSize.height}`;
+pieceCountButton.textContent = pieceCounts[pieceCountIndex];
 startButton.addEventListener("click", startGame);
 closeButton.addEventListener("click", closeAllWindows);
 settingsButton.addEventListener("click", openSettings);
@@ -403,9 +428,11 @@ mazeSizeButton.addEventListener("click", () => {
 	mazeSizeIndex = (mazeSizeIndex + 1) % mazeSizes.length;
 	const {width, height} = mazeSizes[mazeSizeIndex];
 	mazeSizeButton.textContent = `${width}x${height}`;
+	persistSettings();
 });
 
 pieceCountButton.addEventListener("click", () => {
 	pieceCountIndex = (pieceCountIndex + 1) % pieceCounts.length;
 	pieceCountButton.textContent = pieceCounts[pieceCountIndex];
+	persistSettings();
 });
